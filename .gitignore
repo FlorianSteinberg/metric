@@ -1,0 +1,7 @@
+*.aux
+*.d
+*.cache
+*.conf
+Makefile
+*.glob
+*.vo
