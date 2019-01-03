@@ -2,7 +2,7 @@
 From mathcomp Require Import all_ssreflect.
 From rlzrs Require Import all_rlzrs.
 Require Import pointwise reals metric.
-Require Import Reals.
+Require Import Reals Psatz.
 From Coquelicot Require Import Coquelicot.
 
 Set Implicit Arguments.
@@ -49,15 +49,30 @@ Defined.
 Canonical NM2MS K V := MetricSpace.Pack (@NM2MS_class K V) V.
 Coercion NM2MS: NormedModule >-> MetricSpace.
 
-Definition MS2US_class M (cM: MetricSpace.mixin_of M): UniformSpace.class_of M.
-  move: cM => [d _ dst_sym dstxx _ dst_trngl].
+Definition MS2US_mixin (M: MetricSpace): UniformSpace.mixin_of M.
   exists (fun x r y => d x y < r).
   by move => x [eps eg0]; rewrite dstxx /=.
   by move => x y e ineq; rewrite dst_sym.
   move => x y z e e' ineq ineq'.
-  apply/Rle_lt_trans; first exact/(dst_trngl _ _ y).
+  apply/Rle_lt_trans; first exact/(dst_trngl y).
   exact/Rplus_lt_compat.
 Defined.
 
-Definition MS2US (M: MetricSpace): UniformSpace:=
-  match M with MetricSpace.Pack M cM T => UniformSpace.Pack M (MS2US_class cM) T end.
+Canonical MS2US (M: MetricSpace):= UniformSpace.Pack M (MS2US_mixin M) M.
+
+Section lemmas.
+  Context (M N: MetricSpace).
+  Lemma contP (f: M -> N) x:
+    continuity_point f x <-> continuous f x.
+  Proof.
+    split => [cont P [[eps eg0] prp]| cont eps eg0].
+    - have [ | delta [dg0 aprx]]:= cont (eps/2); first by lra.
+      exists (mkposreal delta dg0) => /= y bll'.
+      apply/prp/Rle_lt_trans; first apply/aprx/Rlt_le/bll'.
+      by rewrite /=; lra.
+    have [ | [delta dg0] prp]:= cont (fun y => d (f x) y < eps); first by exists (mkposreal eps eg0).
+    exists (delta/2); split => [ | y dst]; first by lra.
+    apply/Rlt_le/prp/Rle_lt_trans; first exact/dst.
+    rewrite /=; lra.
+  Qed.
+End lemmas.
