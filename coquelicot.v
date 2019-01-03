@@ -62,7 +62,7 @@ Canonical MS2US (M: MetricSpace):= UniformSpace.Pack M (MS2US_mixin M) M.
 
 Section lemmas.
   Context (M N: MetricSpace).
-  Lemma contP (f: M -> N) x:
+  Lemma cntp_cont (f: M -> N) x:
     continuity_point f x <-> continuous f x.
   Proof.
     split => [cont P [[eps eg0] prp]| cont eps eg0].
