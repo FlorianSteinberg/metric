@@ -166,7 +166,14 @@ Section MetricSpaces.
     rewrite /R_dist Rminus_0_l Rabs_Ropp Rabs_pos_eq; first exact/prp.
     exact/dst_pos.
   Qed.
-           
+
+End MetricSpaces.
+Arguments limit {M}.
+Arguments dst_trngl {M} {x} {y}.
+
+Section sets.
+  Context (M: MetricSpace).  
+
   Definition dense_subset (A: subset M):=
     forall x eps, eps > 0 -> exists y, y \from A /\ d x y <= eps.
 
@@ -177,7 +184,7 @@ Section MetricSpaces.
     by rewrite eq.
   Qed.
     
-  Lemma dense_tpmn (A: subset M):
+  Lemma dns_tpmn (A: subset M):
     dense_subset A <-> forall x n, exists y, y \from A /\ d x y <= /2^n.
   Proof.
     split => [dns x n | dns x eps eg0]; first by apply/dns/Rlt_gt/Rinv_0_lt_compat/pow_lt; lra.
@@ -207,10 +214,37 @@ Section MetricSpaces.
     have [m prp]:= dns x n.
     exists m.
     exact/Rlt_le/Rle_lt_trans/ineq.2/prp.
-  Qed.  
-End MetricSpaces.
-Arguments limit {M}.
-Arguments dst_trngl {M} {x} {y}.
+  Qed.
+
+  Definition closure A := make_subset (fun (x: M) =>
+    forall eps, 0 < eps -> exists y, y \from A /\ d x y <= eps).
+
+  Lemma subs_clos A: A \is_subset_of closure A.
+  Proof. by move => x Ax eps epsg0; exists x; split; last rewrite dstxx; try lra. Qed.
+
+  Lemma clos_spec A x: x \from closure A <->
+                     exists (xn: nat -> M), limit xn x /\ forall n, xn n \from A.
+  Proof.
+    split => [clos | [xn [lmt prp]] eps eg0].
+    - have /countable_choice [xn prp]: forall n, exists y, d y x <= /2^n /\ A y.
+      + move => n.
+        have [ | y []]:= clos (/2^n); first by apply/Rinv_0_lt_compat/pow_lt; lra.
+        by exists y; rewrite dst_sym.
+      exists xn; split => [ | n]; last by have []:= prp n.
+      apply/lim_tpmn => n; exists n => m ineq.
+      rewrite dst_sym; apply/Rle_trans; first exact/(prp m).1.
+      apply/Rinv_le_contravar/Rle_pow/leP => //; try lra.
+      by apply/pow_lt; lra.
+    have [n cnd]:= lmt eps eg0.
+    by exists (xn n); split; [apply/prp | apply/(cnd n)].
+  Qed.
+
+  Lemma dns_clos A: dense_subset A <-> closure A === All.
+  Proof.
+    split => [dns x | eq x]; first by split => // _; apply/dns.
+    by have [_ prp]:= eq x; apply/prp.
+  Qed.
+End sets.
 
 Section Cauchy_sequences.
   Context (M: MetricSpace).
