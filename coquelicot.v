@@ -62,8 +62,9 @@ Canonical MS2US (M: MetricSpace):= UniformSpace.Pack M (MS2US_mixin M) M.
 
 Section lemmas.
   Context (M N: MetricSpace).
+  Local Open Scope metric_scope.
   Lemma cntp_cont (f: M -> N) x:
-    continuity_point f x <-> continuous f x.
+    f \is_continuous_in x <-> continuous f x.
   Proof.
     split => [cont P [[eps eg0] prp]| cont eps eg0].
     - have [ | delta [dg0 aprx]]:= cont (eps/2); first by lra.

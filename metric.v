@@ -5,7 +5,7 @@ Require Import Reals Psatz Classical ChoiceFacts Morphisms ProofIrrelevance Proo
 
 Axiom countable_choice: FunctionalCountableChoice.
 Axiom nat_choice: FunctionalCountableChoice_on nat.
-
+Print proof_irrelevance.
 Fact eq_sub T P (a b : {x : T | P x}) : a = b <-> projT1 a = projT1 b.
 Proof.
   split=> [->//|]; move: a b => [a Pa] [b Pb] /= eqab.
@@ -43,7 +43,6 @@ Module MetricSpace.
     Bind Scope metric_scope with sort.
     Notation MetricSpace := MetricSpace.type.
   End Exports.
-
 End MetricSpace.
 
 Export MetricSpace.Exports.
@@ -117,7 +116,7 @@ Section MetricSpaces.
   Definition limit := make_mf (fun xn x =>
     forall eps, 0 < eps -> exists N, forall m,
           (N <= m)%nat -> d x (xn m) <= eps).
-  
+
   Global Instance lim_prpr:
     Proper (@eqfun M nat ==> @set_equiv M) limit.
   Proof.
@@ -169,6 +168,7 @@ Section MetricSpaces.
 
 End MetricSpaces.
 Arguments limit {M}.
+Notation "x \is_limit_of xn":= (limit xn x) (at level 35): metric_scope.
 Arguments dst_trngl {M} {x} {y}.
 
 Section sets.
@@ -245,6 +245,8 @@ Section sets.
     by have [_ prp]:= eq x; apply/prp.
   Qed.
 End sets.
+Notation "A \is_dense":= (dense_subset A) (at level 35): metric_scope.  
+Notation "xn \is_dense":= (dense_sequence xn) (at level 35): metric_scope.
 
 Section Cauchy_sequences.
   Context (M: MetricSpace).
@@ -397,7 +399,7 @@ Section Cauchy_sequences.
     case /orP: (leq_total n m) => ineq; first by apply ass.
     by rewrite dst_sym Rplus_comm; apply ass.
   Qed.
-End Cauchy_sequences.
+End Cauchy_sequences.  
 Definition Cauchy_sequences := Cauchy_sequence.
 Arguments Cauchy_sequence {M}.
 Definition fast_Cauchy_sequences := fast_Cauchy_sequence.
@@ -457,4 +459,7 @@ Section continuity.
     exact/cnd.
   Qed.
 End continuity.
-  
+Notation "f \is_continuous_in x" := (continuity_point f x) (at level 35): metric_scope.  
+Notation "f \is_continuous" := (continuous f) (at level 35): metric_scope.
+Notation "f \is_sequentially_continuous_in x" := (sequential_continuity_point f x) (at level 40): metric_scope.
+Notation "f \is_sequentially_continuous" := (sequentially_continuous f) (at level 40): metric_scope.
