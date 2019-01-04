@@ -44,6 +44,14 @@ Defined.
 
 Canonical metric_R:= MetricSpace.Pack R_MetricSpace_mixin (Base R_met).
 
+Lemma lim_dst (M: MetricSpace) xn (x: M): limit xn x <-> limit (fun n => d x (xn n)) 0.
+Proof.
+  split => lmt eps eg0; have [n prp]:= lmt eps eg0; exists n => m ineq.
+  - by rewrite {1}/d/= Rminus_0_l Rabs_Ropp Rabs_pos_eq; [apply/prp | apply/dst_pos].
+  suff: Rabs (0 - d x (xn m)) <= eps by split_Rabs; lra.
+  exact/prp.
+Qed.
+
 Lemma Uncv_lim: make_mf Un_cv =~= limit.
 Proof.
   move => xn x; split => ass eps epsg0.
