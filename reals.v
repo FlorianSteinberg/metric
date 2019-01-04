@@ -13,6 +13,9 @@ Local Open Scope R_scope.
 Section accumulation.
 Definition acc P x := forall eps, eps > 0 -> exists y, P y /\ R_dist y x < eps.
 
+Lemma tpmn_half n: / 2 ^ n = / 2 ^ n.+1 + / 2 ^ n.+1.
+Proof. by have pos:= pow_lt 2 n; rewrite /= Rinv_mult_distr; lra. Qed.
+
 Lemma cond_eq_P P x y:
 	acc P 0 -> (forall z, P z -> R_dist x y <= Rabs z) -> x = y.
 Proof.
