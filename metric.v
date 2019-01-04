@@ -96,6 +96,9 @@ Section MetricSpaces.
     by apply/Rle_trans/add/Rle_trans/Rplus_le_compat; first exact/dst_trngl.
   Qed.
 
+  Lemma le_dst x y z r r' q: r + r' <= q -> d x z <= r -> d z y <= r' -> d x y <= q.
+  Proof. by move => ineq dst dst'; apply/dst_le/ineq/dst'/dst. Qed.
+
   Lemma dst_lt x y z r r' q: d x z <= r -> d z y <= r' -> r + r' < q -> d x y < q.
   Proof.
     move => ineq ienq' add.
@@ -116,7 +119,8 @@ Section MetricSpaces.
   Definition limit := make_mf (fun xn x =>
     forall eps, 0 < eps -> exists N, forall m,
           (N <= m)%nat -> d x (xn m) <= eps).
-
+  Local Notation "x \is_limit_of xn" := (limit xn x) (at level 4).
+  
   Global Instance lim_prpr:
     Proper (@eqfun M nat ==> @set_equiv M) limit.
   Proof.
@@ -166,9 +170,27 @@ Section MetricSpaces.
     exact/dst_pos.
   Qed.
 
+  Lemma lim_lim xnk xn x:
+    (forall n, (xn n) \is_limit_of (xnk n)) -> x \is_limit_of xn ->
+    exists mu, x \is_limit_of (fun n => xnk n (mu n)).
+  Proof.
+    move => lmtlmt /lim_tpmn lmt.
+    have /nat_choice [mu muprp]:
+      forall n, exists m, forall k, (m <= k)%nat -> d (xn n) (xnk n k) <= /2 ^ n.
+    - by move => n; apply/(lmtlmt n (/2^n))/Rinv_0_lt_compat/pow_lt; lra.
+    exists mu.
+    apply/lim_tpmn => n.
+    have [N prp]:= lmt (n.+1).
+    exists (maxn n.+1 N) => m ineq.
+    apply/le_dst/muprp => //; last first.
+    apply/prp/leq_trans/ineq/leq_maxr.
+    rewrite [X in _ <= X]tpmn_half.
+    apply/Rplus_le_compat/Rinv_le_contravar/Rle_pow/leP/leq_trans/ineq/leq_maxl; try lra.
+    by apply/pow_lt; lra.
+  Qed.    
 End MetricSpaces.
 Arguments limit {M}.
-Notation "x \is_limit_of xn":= (limit xn x) (at level 35): metric_scope.
+Notation "x \is_limit_of xn":= (limit xn x) (at level 23): metric_scope.
 Arguments dst_trngl {M} {x} {y}.
 
 Section sets.
@@ -270,9 +292,6 @@ Section Cauchy_sequences.
   
   Definition fast_Cauchy_sequence := make_subset (fun (xn: nat -> M) =>
     forall n m, d (xn n) (xn m) <= /2^n + /2^m).
-
-  Lemma tpmn_half n: / 2 ^ n = / 2 ^ n.+1 + / 2 ^ n.+1.
-  Proof. by have pos:= pow_lt 2 n; rewrite /= Rinv_mult_distr; lra. Qed.
   
   Lemma fchy_cchy: fast_Cauchy_sequence \is_subset_of Cauchy_sequence.
   Proof.
@@ -402,9 +421,12 @@ Section Cauchy_sequences.
 End Cauchy_sequences.  
 Definition Cauchy_sequences := Cauchy_sequence.
 Arguments Cauchy_sequence {M}.
+Notation "xn \is_Cauchy_sequence" := (Cauchy_sequence xn) (at level 45): metric_scope.
 Definition fast_Cauchy_sequences := fast_Cauchy_sequence.
 Arguments fast_Cauchy_sequence {M}.
+Notation "xn \is_fast_Cauchy_sequence" := (fast_Cauchy_sequence xn) (at level 45): metric_scope.
 Arguments efficient_limit {M}.
+Notation "x \is_efficient_limit_of xn":= (efficient_limit xn x) (at level 45): metric_scope.
 
 Section continuity.
   Definition continuity_point (M N: MetricSpace) (f: M -> N) x :=
@@ -460,6 +482,6 @@ Section continuity.
   Qed.
 End continuity.
 Notation "f \is_continuous_in x" := (continuity_point f x) (at level 35): metric_scope.  
-Notation "f \is_continuous" := (continuous f) (at level 35): metric_scope.
+Notation "f \is_continuous" := (continuous f) (at level 2): metric_scope.
 Notation "f \is_sequentially_continuous_in x" := (sequential_continuity_point f x) (at level 40): metric_scope.
 Notation "f \is_sequentially_continuous" := (sequentially_continuous f) (at level 40): metric_scope.
