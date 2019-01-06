@@ -63,7 +63,7 @@ Proof.
   lra.
 Qed.
 
-Lemma cchy_crit: Cauchy_sequence === make_subset Cauchy_crit.
+Lemma cchy_crit: Cauchy_sequences metric_R === make_subset Cauchy_crit.
 Proof.
   move => xn; split => cchy eps epsg0.
   - have [ | N prp]:= cchy (eps/2); first by rewrite /Rdiv; lra.

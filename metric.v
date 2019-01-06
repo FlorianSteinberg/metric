@@ -274,11 +274,13 @@ Section Cauchy_sequences.
   Context (M: MetricSpace).
   Implicit Types (x y z: M) (xn yn: nat -> M).
   
-  Definition Cauchy_sequence := make_subset (fun xn =>
+  Definition Cauchy_sequence xn :=
     forall eps, 0 < eps -> exists N, forall n m,
-          (N <= n)%nat -> (N <= m)%nat -> d (xn n) (xn m) <= eps).
+          (N <= n)%nat -> (N <= m)%nat -> d (xn n) (xn m) <= eps.
+
+  Definition Cauchy_sequences := make_subset Cauchy_sequence.
   
-  Lemma lim_cchy: dom limit \is_subset_of Cauchy_sequence.
+  Lemma lim_cchy: dom limit \is_subset_of Cauchy_sequences.
   Proof.
     move => xn [x lim] eps eg0.
     have [ | N prp]:= lim (eps/2); first by lra.
@@ -288,12 +290,14 @@ Section Cauchy_sequences.
     lra.
   Qed.
   
-  Definition complete := Cauchy_sequence \is_subset_of dom limit.
+  Definition complete := Cauchy_sequences \is_subset_of dom limit.
   
-  Definition fast_Cauchy_sequence := make_subset (fun (xn: nat -> M) =>
-    forall n m, d (xn n) (xn m) <= /2^n + /2^m).
+  Definition fast_Cauchy_sequence (xn: nat -> M) :=
+    forall n m, d (xn n) (xn m) <= /2^n + /2^m.
+
+  Definition fast_Cauchy_sequences := make_subset fast_Cauchy_sequence.
   
-  Lemma fchy_cchy: fast_Cauchy_sequence \is_subset_of Cauchy_sequence.
+  Lemma fchy_cchy: fast_Cauchy_sequences \is_subset_of Cauchy_sequences.
   Proof.
     move => xn cchy eps epsg0.
     have [N [_ ineq]]:= accf_tpmn epsg0.
@@ -360,7 +364,7 @@ Section Cauchy_sequences.
   Definition efficient_limit := make_mf (fun xn (x: M) =>
     forall n, d x (xn n) <= /2^n).
   
-  Lemma lim_eff_spec: efficient_limit =~= limit|_(fast_Cauchy_sequence).
+  Lemma lim_eff_spec: efficient_limit =~= limit|_(fast_Cauchy_sequences).
   Proof.
     move => xn x; split => [lim | [fchy lim] n].
     - split => [n m | eps epsg0].
@@ -393,7 +397,7 @@ Section Cauchy_sequences.
   Qed.
 
   Lemma fchy_lim_eff: complete ->
-    fast_Cauchy_sequence === dom efficient_limit.
+    fast_Cauchy_sequences === dom efficient_limit.
   Proof.
     move => cmplt xn; split => [cchy | [x /lim_eff_spec []]]//.
     rewrite lim_eff_spec dom_restr_spec; split => //.
@@ -419,11 +423,7 @@ Section Cauchy_sequences.
     by rewrite dst_sym Rplus_comm; apply ass.
   Qed.
 End Cauchy_sequences.  
-Definition Cauchy_sequences := Cauchy_sequence.
-Arguments Cauchy_sequence {M}.
 Notation "xn \is_Cauchy_sequence" := (Cauchy_sequence xn) (at level 45): metric_scope.
-Definition fast_Cauchy_sequences := fast_Cauchy_sequence.
-Arguments fast_Cauchy_sequence {M}.
 Notation "xn \is_fast_Cauchy_sequence" := (fast_Cauchy_sequence xn) (at level 45): metric_scope.
 Arguments efficient_limit {M}.
 Notation "x \is_efficient_limit_of xn":= (efficient_limit xn x) (at level 45): metric_scope.

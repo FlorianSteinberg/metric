@@ -1,7 +1,7 @@
 (* Interface of MetricSpace type with types from the Coqeulicot Hierarchy *)
 From mathcomp Require Import all_ssreflect.
 From rlzrs Require Import all_rlzrs.
-Require Import pointwise reals metric.
+Require Import pointwise reals standard metric.
 Require Import Reals Psatz.
 From Coquelicot Require Import Coquelicot.
 
