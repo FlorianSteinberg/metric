@@ -25,6 +25,16 @@ apply /Rle_lt_trans; first by apply (prp z).
 by rewrite /R_dist Rminus_0_r in ineq.
 Qed.
 
+  Lemma cond_leq x y: (forall eps, 0 < eps -> x <= y + eps) -> x <= y.
+  Proof.
+    move => prp.
+    apply/Rnot_lt_le => xg0.
+    suff: x = y by lra.
+    apply/cond_eq => eps eg0.
+    by have := prp (eps/2); split_Rabs; lra.
+  Qed.
+
+
 Definition acc_f_zero_plus T (f: T -> R) := forall eps, eps > 0 -> exists t, 0 < f t < eps.
 
 Lemma acc_f_acc T (f: T -> R):
