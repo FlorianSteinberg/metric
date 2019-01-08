@@ -64,6 +64,17 @@ elim: m => [ | m [n /leP ih]]; first by exists 0%nat; apply /leP => /=; lia.
 exists n.+1; apply /leP => /=; lia.
 Qed.
 
+  Lemma tpmnP n m: reflect (/2^n <= /2^m) (m <= n)%nat.
+  Proof.
+    case E: (m <= n)%nat.
+    - apply/ReflectT/Rinv_le_contravar/Rle_pow/leP/E; try lra.
+      by apply/pow_lt; lra.
+    apply/ReflectF/Rlt_not_le/Rinv_lt_contravar/Rlt_pow/leP; try lra.
+    - apply/Rmult_lt_0_compat; apply/pow_lt; try lra.
+    by rewrite ltnNge E.
+  Qed.
+
+
 Lemma accf_tpmn: acc_f_zero_plus (fun n => /2^n).
 Proof.
 move => r rgt0; pose z := Z.to_nat (up (1/r)).
