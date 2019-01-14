@@ -3,6 +3,7 @@
 pointwise.v
 reals.v
 metric.v
+infima_suprema.v
 coquelicot.v
 standard.v
 Qmetric.v
