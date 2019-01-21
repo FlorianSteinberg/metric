@@ -116,6 +116,16 @@ Section MetricSpaces.
   
   Canonical subspace (A: subset M):= MetricSpace.Pack (subspace_class A) A.
 
+  Definition sub_fun S T (A: subset S) (f: S -> T) (a: A) := f (sval a).
+  Arguments sub_fun {S} {T} (A).
+  
+  Definition sub_mf S T (A: subset S) (f: S ->> T) :=
+    make_mf (fun (a: A) t => f (sval a) t).
+
+  Lemma sub_F2MF S T (A: subset S) (f: S -> T):
+    F2MF (sub_fun A f) =~= sub_mf A (F2MF f).
+  Proof. done. Qed.
+
   Definition limit := make_mf (fun xn x =>
     forall eps, 0 < eps -> exists N, forall m,
           (N <= m)%nat -> d x (xn m) <= eps).
