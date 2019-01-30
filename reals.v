@@ -79,6 +79,9 @@ Section tpmn.
   Lemma tpmn_pos n: 0 <= /2^n.
   Proof. by apply/Rlt_le/Rinv_0_lt_compat/pow_lt; lra. Qed.
 
+  Lemma tpmn_lt n: 0 < /2^n.
+  Proof. apply/Rinv_0_lt_compat/pow_lt; lra. Qed.
+  
   Lemma accf_tpmn: acc_f_zero_plus (fun n => /2^n).
   Proof.
     move => r rgt0; pose z := Z.to_nat (up (1/r)).
@@ -93,4 +96,7 @@ Section tpmn.
     have ->: 2 = INR 2 by trivial.
     by rewrite -pow_INR; apply lt_INR => /=; lia.
   Qed.
+
+  Lemma dns0_tpmn: forall eps, 0 < eps -> exists n, /2^n < eps.
+  Proof. by move => eps /accf_tpmn [n []]; exists n. Qed.
 End tpmn.
