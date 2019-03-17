@@ -5,7 +5,6 @@ Require Import pointwise reals standard metric.
 Require Import Reals Psatz Classical ChoiceFacts.
 From Coquelicot Require Import Coquelicot.
 
-Axiom choice: FunctionalCountableChoice_on R.
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
@@ -13,24 +12,69 @@ Unset Printing Implicit Defensive.
 Section infima.
   Local Open Scope metric_scope.
   Implicit Types (A: subset R).  
+
   Definition is_lower_bound A x:= forall a, a \from A -> x <= a.
-  
+
   Definition lower_bounds A:= make_subset (fun x => is_lower_bound A x).
-  
+
   Definition is_infimum A x := is_lower_bound A x /\ is_upper_bound (lower_bounds A) x.
   
-  Definition mf_infimum:= make_mf is_infimum.
+  Lemma is_infimum_glb_Rbar A x:
+    is_infimum A x <-> is_glb_Rbar A (Finite x).
+  Proof.
+    rewrite is_glb_Rbar_correct.
+    split => [[lb inf] | [lb inf]].
+    - split.
+      + case; try by case.
+        by move => y [_ Ay]; apply/lb.
+      case => //[ y ass | ass].
+      + apply/inf => z Az.
+        have /=ass' := ass z.
+        by apply/ass'.
+      suff: (x + 1 <= x) by lra.
+      apply/inf => y Ay; have /= ass' := ass (Finite y).
+      by exfalso; apply/ass'.
+    split => y Ay; first exact/(lb y).
+    apply/(inf y); case => // [z [_ ] | []]//.
+    exact/Ay.
+  Qed.
   
+  Definition mf_infimum:= make_mf is_infimum.
+
   Lemma inf_sing: mf_infimum \is_singlevalued.
   Proof.
     move => A inf inf' [bnd sup] [bnd' sup'].
     suff: inf <= inf' /\ inf' <= inf by lra.
     by split; [apply/sup' | apply/sup].
   Qed.
-  
-  Definition infimum A:= iota (mf_infimum A).
-  Notation inf A := (infimum A).
+      
+  Definition p_infimum A := match Glb_Rbar A with
+                        | Finite r => Some r
+                        | _ => None
+                        end.
 
+  Lemma p_inf_spec: PF2MF p_infimum =~= mf_infimum.
+  Proof.
+    move => A infA; rewrite /p_infimum /=.
+    split => [/= | /is_infimum_glb_Rbar spec]; last by have -> := is_glb_Rbar_unique _ _ spec.
+    case spec: (Glb_Rbar A) => [x | | ] // <-.
+    apply/is_infimum_glb_Rbar; rewrite -spec.
+    exact/Glb_Rbar_correct.
+  Qed.
+    
+  Definition infimum A := match Glb_Rbar A with
+                      | Finite r => r
+                      | _ => 0
+                      end.
+  Notation inf := infimum.
+  
+  Lemma inf_icf: infimum \is_choice_for mf_infimum.
+  Proof.
+    rewrite /infimum => A infA val.
+    rewrite (is_glb_Rbar_unique A infA) //.
+    exact/is_infimum_glb_Rbar.
+  Qed.
+  
   Definition nonempty A:= exists a, a \from A.
 
   Definition nonempties := make_subset nonempty.
@@ -48,7 +92,7 @@ Section infima.
       by apply/inf => y Ay; exfalso; apply/mty/Ay.
     have := lb x Ax.
     case => [ineq | eq]; last by exists x; split => [ | z lbz]; [rewrite -eq | exact/lbz].
-    suff /choice [xn xnprp]:
+    suff /countable_choice [xn xnprp]:
       forall n, exists xn, lower_bounds A xn
                            /\
                            exists z, A z /\ d xn z <= /2^n.
@@ -103,25 +147,20 @@ Section infima.
     rewrite /Rdiv (tpmn_half n) in dst.
     by move: xn'lz dst' dst; rewrite /d /=; split_Rabs; lra.
   Qed.
-                                        
+  
   Lemma inf_spec A: A \from dom mf_infimum -> mf_infimum A (inf A).
-  Proof.
-    move => [infA val].
-    apply(iota_correct (mf_infimum A)).
-    exists infA; split => // infA' val'.
-    exact/inf_sing/val'/val.
-  Qed.
+  Proof. by case; apply/inf_icf. Qed.
 
   Lemma inf_eq A r: A \from dom mf_infimum -> mf_infimum A r -> inf A = r.
   Proof.
     move => fd val.
-    exact/inf_sing/val/inf_spec.
+    exact/inf_sing/val/inf_icf/val.
   Qed.
 
   Lemma inf_leq A x: A \from dom mf_infimum -> x \from A -> inf A <= x.
   Proof.
-    move => fd xfa.
-    have [lb _]:= inf_spec fd.
+    move => [infA val] xfa.
+    have [lb _]:= inf_icf val.
     exact/lb.
   Qed.
 
@@ -133,8 +172,8 @@ Section infima.
   
   Lemma inf_geq A x: A \from dom mf_infimum -> x \from lower_bounds A -> x <= inf A.
   Proof.
-    move => fd lb.
-    have [lbs nf]:= inf_spec fd.
+    move => [infA val] lb.
+    have [lbs nf]:= inf_icf val.
     exact/nf.
   Qed.
 
