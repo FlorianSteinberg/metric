@@ -2,7 +2,7 @@
 
 From mathcomp Require Import ssreflect seq ssrfun ssrbool ssrnat eqtype.
 Require Import reals metric standard.
-From rlzrs Require Import all_mf.
+From mf Require Import all_mf.
 Require Import Qreals Reals Psatz ClassicalChoice FunctionalExtensionality.
 
 Set Implicit Arguments.

@@ -1,7 +1,7 @@
 (* Proofs that the structures introduced on metric spaces coincide with
 the corresponding ones from the standard library. *)
 From mathcomp Require Import ssreflect ssrnat ssrbool ssrfun.
-From rlzrs Require Import all_mf.
+From mf Require Import all_mf.
 Require Import pointwise reals metric.
 Require Import Reals Ranalysis Psatz.
 

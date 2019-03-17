@@ -2,7 +2,7 @@
 usefull when considering computability. *)
 
 From mathcomp Require Import ssreflect ssrnat ssrbool ssrfun.
-From rlzrs Require Import all_mf.
+From mf Require Import all_mf.
 Require Import Reals Psatz.
 
 Set Implicit Arguments.

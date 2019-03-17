@@ -1,5 +1,5 @@
 From mathcomp Require Import ssreflect seq ssrfun ssrbool ssrnat.
-From rlzrs Require Import all_mf.
+From mf Require Import all_mf.
 Require Import pointwise reals.
 Require Import Reals Psatz Classical ChoiceFacts Morphisms ProofIrrelevance ProofIrrelevanceFacts.
 
