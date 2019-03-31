@@ -1,5 +1,7 @@
 -R . metric
-
+-arg -w -arg -notation-overridden
+-arg -w -arg -masking-absolute-name
+-arg -w -arg -projection-no-head-constant
 pointwise.v
 reals.v
 metric.v
