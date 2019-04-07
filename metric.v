@@ -5,7 +5,6 @@ Require Import Reals Psatz Classical ChoiceFacts Morphisms ProofIrrelevance Proo
 
 Axiom countable_choice: FunctionalCountableChoice.
 Axiom nat_choice: FunctionalCountableChoice_on nat.
-Print proof_irrelevance.
 Fact eq_sub T P (a b : {x : T | P x}) : a = b <-> projT1 a = projT1 b.
 Proof.
   split=> [->//|]; move: a b => [a Pa] [b Pb] /= eqab.
