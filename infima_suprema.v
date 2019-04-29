@@ -70,7 +70,7 @@ Section infima.
   
   Lemma inf_icf: infimum \is_choice_for mf_infimum.
   Proof.
-    rewrite /infimum => A infA val.
+    rewrite /infimum => A [infA val].
     rewrite (is_glb_Rbar_unique A infA) //.
     exact/is_infimum_glb_Rbar.
   Qed.
@@ -149,18 +149,18 @@ Section infima.
   Qed.
   
   Lemma inf_spec A: A \from dom mf_infimum -> mf_infimum A (inf A).
-  Proof. by case; apply/inf_icf. Qed.
+  Proof. exact/inf_icf. Qed.
 
   Lemma inf_eq A r: A \from dom mf_infimum -> mf_infimum A r -> inf A = r.
   Proof.
     move => fd val.
-    exact/inf_sing/val/inf_icf/val.
+    exact/inf_sing/val/inf_icf.
   Qed.
 
   Lemma inf_leq A x: A \from dom mf_infimum -> x \from A -> inf A <= x.
   Proof.
-    move => [infA val] xfa.
-    have [lb _]:= inf_icf val.
+    move => Afd xfa.
+    have [lb _]:= inf_icf Afd.
     exact/lb.
   Qed.
 
@@ -172,8 +172,8 @@ Section infima.
   
   Lemma inf_geq A x: A \from dom mf_infimum -> x \from lower_bounds A -> x <= inf A.
   Proof.
-    move => [infA val] lb.
-    have [lbs nf]:= inf_icf val.
+    move => Afd lb.
+    have [lbs nf]:= inf_icf Afd.
     exact/nf.
   Qed.
 
