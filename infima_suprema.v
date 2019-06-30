@@ -1,7 +1,7 @@
 (* Interface of MetricSpace type with types from the Coqeulicot Hierarchy *)
 From mathcomp Require Import all_ssreflect.
 From rlzrs Require Import all_rlzrs.
-Require Import pointwise reals standard metric.
+Require Import pointwise reals pseudo_metrics pseudo_metric_spaces metrics metric_spaces standard.
 Require Import Reals Psatz Classical ChoiceFacts.
 From Coquelicot Require Import Coquelicot.
 
@@ -14,7 +14,7 @@ Section infima.
   Implicit Types (A: subset R).  
 
   Definition is_lower_bound A x:= forall a, a \from A -> x <= a.
-
+  
   Definition lower_bounds A:= make_subset (fun x => is_lower_bound A x).
 
   Definition is_infimum A x := is_lower_bound A x /\ is_upper_bound (lower_bounds A) x.
@@ -82,7 +82,7 @@ Section infima.
   Definition bounded_from_below A := exists a, a \from lower_bounds A.
 
   Definition lower_boundeds:= make_subset bounded_from_below.
-
+ 
   Lemma dom_inf: dom mf_infimum === lower_boundeds \n nonempties.
   Proof.
     move => A; split => [[x [lb inf]] | [[y lb] [x Ax]]].
@@ -93,16 +93,17 @@ Section infima.
     have := lb x Ax.
     case => [ineq | eq]; last by exists x; split => [ | z lbz]; [rewrite -eq | exact/lbz].
     suff /countable_choice [xn xnprp]:
-      forall n, exists xn, lower_bounds A xn
+      forall n, exists (xn: M2PM metric_R), lower_bounds A xn
                            /\
-                           exists z, A z /\ d xn z <= /2^n.
+                           exists z, A z /\ d (xn, z) <= /2^n.
     - have xnbnd: forall n, is_lower_bound A (xn n) by move => n; have []:= xnprp n.
-      have /(fchy_lim_eff R_cmplt) [infA lmt]: xn \is_fast_Cauchy_sequence.
+      have /(@fchy_lim_eff R_MetricSpace R_cmplt) [infA lmt]:
+        (xn: sequence_in (M2PM R_MetricSpace)) \fast_Cauchy.
       + apply cchy_eff_suff => n m nlm.
         have [_ [z [Az dst]]]:= xnprp m.
         have [_ [z' [Az' dst']]]:= xnprp n.
         have := xnbnd n z Az; have := xnbnd m z' Az'.
-        by move : dst dst'; rewrite /d/=; split_Rabs; lra.
+        by move : dst dst' => /=; split_Rabs; lra.
       exists infA.
       split => [z Az | x' lbx'].
       * apply/lim_inc/lim_cnst/lim_eff_lim/lmt.
@@ -111,10 +112,10 @@ Section infima.
       have /accf_tpmn [N [pos Nle]] : 0 < eps/2 by lra.
       have [_ [z [Az dst]]]:= xnprp N.
       have := lbx' z Az; have := lmt N.
-      by move: dst; rewrite /d/=; split_Rabs; lra.
-    suff prp: forall n, exists xn, lower_bounds A xn
+      by move: dst => /=; split_Rabs; lra.
+    suff prp: forall n, exists (xn: M2PM metric_R), lower_bounds A xn
                                    /\
-                                   exists z, A z /\ d xn z <= (x - y)/2^n.
+                                   exists z, A z /\ d(xn, z) <= (x - y)/2^n.
     - move => n.
       have /accf_tpmn [N [pos Nlxy]]: 0 < /(x - y) by apply/Rinv_0_lt_compat; lra.
       have [xn [xnlb [z [Az dst]]]]:= prp (N + n)%nat.
@@ -132,20 +133,20 @@ Section infima.
       rewrite -(Rinv_involutive (x - y)); try lra.
       by apply/Rinv_le_contravar; lra.
     elim => [ | n [xn [xnlb [z [Az dst]]]]].
-    - by exists y; split; last by exists x; split; last by rewrite /d/=; split_Rabs; lra.
-    case: (classic (exists z', A z' /\ d xn z' <= (x - y)/2^n.+1)) => [ex | /not_ex_all_not nex].
+    - by exists y; split; last by exists x; split; last by simpl; split_Rabs; lra.
+    case: (classic (exists z', A z' /\ d(xn, z') <= (x - y)/2^n.+1)) => [ex | /not_ex_all_not nex].
     - by exists xn.
     exists (xn + (x-y)/2^n.+1).
     split => [z' Az' |].
     - have /not_and_or [nAz' | /Rnot_le_lt dst']:= nex z'; first by exfalso; apply/nAz'.
-      by have := xnlb z' Az'; move: dst'; rewrite /d/=; split_Rabs; lra.
+      by have := xnlb z' Az'; move: dst' => /=; split_Rabs; lra.
     have /not_and_or [nAz | /Rnot_le_lt dst']:= nex z; first by exfalso; apply/nAz.
     exists z; split => //; have xnlz:= xnlb z Az.
     have xn'lz: xn + (x - y) /2^n.+1 <= z.    
     - have : 0 < (x - y) /2^n.+1 by apply/Rdiv_lt_0_compat/pow_lt; lra.
-      by rewrite /d /= in dst; move : dst' dst; rewrite /d [X in _ < X]/=; split_Rabs; lra.
+      by simpl in dst; move : dst' dst; rewrite [X in _ < X]/=; split_Rabs; lra.
     rewrite /Rdiv (tpmn_half n) in dst.
-    by move: xn'lz dst' dst; rewrite /d /=; split_Rabs; lra.
+    by move: xn'lz dst' dst => /=; split_Rabs; lra.
   Qed.
   
   Lemma inf_spec A: A \from dom mf_infimum -> mf_infimum A (inf A).

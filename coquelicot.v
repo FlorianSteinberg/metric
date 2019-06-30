@@ -1,7 +1,7 @@
-(* Interface of MetricSpace type with types from the Coqeulicot Hierarchy *)
+(* Interface of PseudoMetricSpace and MetricSpace types with types from the Coqeulicot Hierarchy *)
 From mathcomp Require Import all_ssreflect.
 From rlzrs Require Import all_rlzrs.
-Require Import pointwise reals standard metric infima_suprema.
+Require Import pointwise reals all_metrics all_metric_spaces standard infima_suprema.
 Require Import Reals Psatz.
 From Coquelicot Require Import Coquelicot.
 
@@ -17,68 +17,48 @@ Proof.
   by rewrite plus_zero_l.
 Qed.
 
-Definition AR2MS_class (R: AbsRing): MetricSpace.mixin_of (AbsRing.sort R).
-  exists (fun x y => abs (minus x y)).
-  by move => x y; apply /abs_ge_0.
-  by move => x y; apply/abs_minus.
-  by move => x; rewrite minus_eq_zero; apply/abs_zero.
-  by move => x y eq; apply/minus_eq/abs_eq_zero.
-  move => x y z.
+Instance AR2MS (R: AbsRing): MetricSpace.
+  exists R (fun (p: R * R) => abs (minus p.1 p.2)).
+  split; first by move => x y; apply /abs_ge_0.
+  - by move => x y; apply/abs_minus.
+  - split => [eq | ->]; last by rewrite minus_eq_zero; apply/abs_zero.
+    exact/minus_eq/abs_eq_zero.
+  move => z x y.
   rewrite /minus.
   apply/Rle_trans/abs_triangle.
   suff ->: plus x (opp y) = plus (plus x (opp z)) (plus z (opp y)) by apply/Rle_refl.
   by rewrite plus_assoc -(plus_assoc x) plus_opp_l plus_zero_r.
 Defined.
 
-Canonical AR2MS (R: AbsRing): MetricSpace := MetricSpace.Pack (AR2MS_class R) (AbsRing.sort R).
+Coercion AR2MS: AbsRing >-> MetricSpace.
 
-Definition NM2MS_class (K: AbsRing) (V: NormedModule K):
-  MetricSpace.mixin_of (NormedModule.sort K V).
-  exists (fun x y => norm (minus x y)).
-  by move => x y; apply/norm_ge_0.
-  by move => x y; rewrite -{1}opp_minus norm_opp.
-  by move => x; rewrite minus_eq_zero norm_zero.
-  by move => x y eq; apply/minus_eq/norm_eq_zero.
-  move => x y z.
+Instance NM2MS (K: AbsRing) (V: NormedModule K): MetricSpace.
+  exists V (fun p: V * V => norm (minus p.1 p.2)).
+  split; first by move => x y; apply/norm_ge_0.
+  - by move => x y; rewrite -{1}opp_minus norm_opp.
+  - split => [eq | ->]; last by rewrite minus_eq_zero norm_zero.
+    exact/minus_eq/norm_eq_zero.
+  move => z x y.
   rewrite /minus.
   apply/Rle_trans/norm_triangle.
   suff ->: plus x (opp y) = plus (plus x (opp z)) (plus z (opp y)) by apply/Rle_refl.
   by rewrite plus_assoc -(plus_assoc x) plus_opp_l plus_zero_r.
 Defined.
 
-Canonical NM2MS K V := MetricSpace.Pack (@NM2MS_class K V) V.
 Coercion NM2MS: NormedModule >-> MetricSpace.
 
-Section MetricSpace2UniformSpace.
-  Definition MS2US_mixin (M: MetricSpace): UniformSpace.mixin_of M.
-    exists (fun x r y => d x y < r).
+Section PseudoMetricSpaces_and_UniformSpaces.
+  Definition PMS2US_mixin (M: PseudoMetricSpace): UniformSpace.mixin_of M.
+    exists (fun x r y => d(x, y) < r).
     - by move => x [eps eg0]; rewrite dstxx /=.
-    - by move => x y e ineq; rewrite dst_sym.
+    - by move => x y e ineq; rewrite pseudo_metrics.dst_sym.
     move => x y z e e' ineq ineq'.
-    apply/Rle_lt_trans; first exact/(dst_trngl y).
+    apply/Rle_lt_trans; first exact/(pseudo_metrics.dst_trngl y).
     exact/Rplus_lt_compat.
   Defined.
   
-  Canonical MS2US (M: MetricSpace):= UniformSpace.Pack M (MS2US_mixin M) M.
+  Canonical PMS2US (M: PseudoMetricSpace):= UniformSpace.Pack M (PMS2US_mixin M) M.
 
-  Context (M N: MetricSpace).
-  Local Open Scope metric_scope.
-  Lemma cntp_cont (f: M -> N) x:
-    f \is_continuous_in x <-> continuous f x.
-  Proof.
-    split => [cont P [[eps eg0] prp]| cont eps eg0].
-    - have [ | delta [dg0 aprx]]:= cont (eps/2); first by lra.
-      exists (mkposreal delta dg0) => /= y bll'.
-      apply/prp/Rle_lt_trans; first apply/aprx/Rlt_le/bll'.
-      by rewrite /=; lra.
-    have [ | [delta dg0] prp]:= cont (fun y => d (f x) y < eps); first by exists (mkposreal eps eg0).
-    exists (delta/2); split => [ | y dst]; first by lra.
-    apply/Rlt_le/prp/Rle_lt_trans; first exact/dst.
-    rewrite /=; lra.
-  Qed.
-End MetricSpace2UniformSpace.
-
-Section UniformSpace2MetricSpace.
   Context (M: UniformSpace).
 
   Definition distance_bounds (x y: M) := make_subset (fun eps => 0 <= eps /\ ball x eps y).
@@ -180,34 +160,36 @@ Section UniformSpace2MetricSpace.
     by apply/Rlt_le/Rmin_pos; lra.
   Qed.
   
-  Definition US2MS_mixin:
-    (forall (x y: M), (forall eps, 0 < eps -> ball x eps y) -> x = y) -> MetricSpace.mixin_of M.
-    exists d_M.
-    - exact/d_pos.
-    - exact/d_sym.
-    - exact/dxx.
-    - exact/bll_dst.
-    - exact/d_trngl.
+  Instance US2PMS: PseudoMetricSpace.
+    exists M (fun p => d_M p.1 p.2); split; [exact/d_pos | exact/d_sym | exact/dxx | ].
+    by move => z x y; apply/d_trngl.
   Defined.
-
-  Definition US2MS (prp : forall x y, (forall eps, 0 < eps -> ball x eps y) -> x = y):=
-    MetricSpace.Pack (US2MS_mixin prp) M.
-End UniformSpace2MetricSpace.
+End PseudoMetricSpaces_and_UniformSpaces.
 
 Section Continuity.
-  Context (N M: UniformSpace).
-  Hypothesis (dM_eq: forall (x y: M), (forall eps, 0 < eps -> ball x eps y) -> x = y).
-  Hypothesis (dN_eq: forall (x y: N), (forall eps, 0 < eps -> ball x eps y) -> x = y).
-  Definition met_M:= US2MS dM_eq.
-  Definition met_N:= US2MS dN_eq.
+  Local Open Scope metric_scope.
+  Lemma cntp_cntp_pmtrc (M N: PseudoMetricSpace) (f: M -> N) x:
+    f \continuous_in x <-> continuous (f: PMS2US M -> PMS2US N) x.
+  Proof.
+    split => [cont P [[eps eg0] prp]| cont eps eg0].
+    - have [ | delta [dg0 aprx]]:= cont (eps/2); first by lra.
+      exists (mkposreal delta dg0) => /= y bll'.
+      apply/prp/Rle_lt_trans; first apply/aprx/Rlt_le/bll'.
+      by rewrite /=; lra.
+    have [ | [delta dg0] prp]:= cont (fun y => d (f x, y) < eps); first by exists (mkposreal eps eg0).
+    exists (delta/2); split => [ | y dst]; first by lra.
+    apply/Rlt_le/prp/Rle_lt_trans; first exact/dst.
+    rewrite /=; lra.
+  Qed.
   
-  Lemma cntp_cntp (f: N -> M) x: continuous f x <-> ((f: met_N -> met_M) \is_continuous_in x)%met.
+  Lemma cntp_cntp_us (N M: UniformSpace) (f: N -> M) x:
+    continuous f x <-> (f: US2PMS N -> US2PMS M) \continuous_in x.
   Proof.
     split => [cont eps eg0 | cont P [[eps eg0] prp]].
-    - have [ | [delta dg0] dprp]:= cont (fun y => d (f x: met_M) (y: met_M) <= eps).
+    - have [ | [delta dg0] dprp]:= cont (fun y => d (f x: US2PMS M, y: US2PMS M) <= eps).
       + have eg2: 0 < eps/2 by lra.
         exists (mkposreal _ eg2) => y bll.
-        suff : d (f x: met_M) y <= eps/2 by lra.
+        suff : d (f x: US2PMS M, y) <= eps/2 by simpl; lra.
         rewrite /d/=/d_M/=; apply/bnds_inf_leq.
         * by exists 0; rewrite /= => z [[] | ]; lra.
         by left; split; [lra | apply/bll].
@@ -217,7 +199,7 @@ Section Continuity.
     have e2: 0 < Rmin (eps/2) (1/4) by apply/Rmin_pos; lra.
     have [delta [dg0 cnd]]:= cont (Rmin (eps/2) (1/4)) e2.
     exists (mkposreal _ dg0) => y bll.    
-    have : d (f x: met_M) (f y) <= Rmin (eps/2) (1/4).
+    have : d (f x: US2PMS M, f y) <= Rmin (eps/2) (1/4).
     - apply/cnd; rewrite /d/=/d_M/=.
       apply/inf_leq; first exact/dom_d.
       by left; split; first lra.

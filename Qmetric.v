@@ -1,7 +1,7 @@
 (* Compatibility with rationals from the standard library *)
 
 From mathcomp Require Import ssreflect seq ssrfun ssrbool ssrnat eqtype.
-Require Import reals metric standard.
+Require Import reals all_metrics all_metric_spaces standard.
 From mf Require Import all_mf.
 Require Import Qreals Reals Psatz ClassicalChoice FunctionalExtensionality.
 
@@ -129,7 +129,7 @@ Section rationals_as_reals.
   Qed.
 
   Lemma Q_dense:
-    dense_subset (codom (F2MF Q2R)).
+    (codom (F2MF Q2R)) \dense_subset.
   Proof.
     move => x eps eg0.
     have [q [qg0 qle]]:= accf_Q2R_0 eg0.
@@ -143,11 +143,11 @@ Section rationals_as_reals.
     by rewrite /Rdiv -(Rmult_1_l eps); apply/Rmult_le_compat; lra.
   Qed.
 
-  Lemma Q_sur_dns (r: nat -> Q):
-    r \is_surjective -> dense_sequence (Q2R \o_f r: nat -> R_met).
+  Lemma Q_sur_dns (qn: sequence_in Q):
+    qn \is_surjective -> (Q2R \o_f qn) \is_dense_sequence.
   Proof.
     move => sur; rewrite dseq_dns.
-    suff ->: codom (F2MF (Q2R \o_f r)) === codom (F2MF Q2R) by apply/Q_dense.
+    suff ->: codom (F2MF (Q2R \o_f qn)) === codom (F2MF Q2R) by apply/Q_dense.
     rewrite -F2MF_comp_F2MF comp_rcmp; last exact/F2MF_tot.
     move => x; split => [[n [q []]] | [q <-]]; first by exists q.
     by have [n eq]:= sur q; exists n; exists q.
@@ -158,8 +158,8 @@ Section rationals_and_metric_spaces.
   Context (M: MetricSpace).
   Implicit Types (x y: M).
   Notation subset:= mf_subset.type.
-  Lemma dense_Q (A: subset M): dense_subset A <->
-    forall x eps, 0 < Q2R eps -> exists y, y \from A /\ d x y <= Q2R eps.
+  Lemma dense_Q (A: subset M): A \dense_subset <->
+    forall x eps, 0 < Q2R eps -> exists y, y \from A /\ d(x, y) <= Q2R eps.
   Proof.
     split => dns x eps eg0; first exact/dns.
     have [q ineq]:= accf_Q2R_0 eg0.
@@ -169,15 +169,15 @@ Section rationals_and_metric_spaces.
   Qed.
 
   Lemma cond_eq_Q x y:
-    (forall q, d x y <= Q2R q) -> x = y.
+    (forall q, d(x, y) <= Q2R q) -> x = y.
   Proof.
-    move => prp; apply/dst_eq/cond_eq_f; first exact/accf_Q2R_0.
+    move => prp; apply/dst0_eq/cond_eq_f; first exact/accf_Q2R_0.
     intros; rewrite/R_dist Rabs_pos_eq Rminus_0_r; first exact/prp.
     exact/dst_pos.
   Qed.
 
   Lemma limQ xn x: limit xn x <->
-    forall eps, 0 < Q2R eps -> exists N, forall m, (N <= m)%nat -> d x (xn m) <= Q2R eps.
+    forall eps, 0 < Q2R eps -> exists N, forall m, (N <= m)%nat -> d(x, xn m) <= Q2R eps.
   Proof.
     split => lim eps eg0; first exact/lim.
     have [q ineq]:= accf_Q2R_0 eg0.

@@ -4,7 +4,12 @@
 -arg -w -arg -projection-no-head-constant
 pointwise.v
 reals.v
-metric.v
+pseudo_metrics.v
+metrics.v
+all_metrics.v
+pseudo_metric_spaces.v
+metric_spaces.v
+all_metric_spaces.v
 infima_suprema.v
 coquelicot.v
 standard.v

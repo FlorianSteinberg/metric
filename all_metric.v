@@ -1,2 +1,1 @@
-Require Export pointwise metric standard coquelicot.
-Open Scope metric_scope.
+Require Export pointwise all_metrics all_metric_spaces.
