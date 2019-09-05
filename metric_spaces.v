@@ -124,9 +124,6 @@ Section Cauchy_sequences.
   Proof. exact/cchy_eff_suff. Qed.
 End Cauchy_sequences.  
 
-Definition metric_function (M M': MetricSpace) := M -> M'.
-Definition pseudo_metric_function (M M': PseudoMetricSpace):= M -> M'.
-
 Section continuity.
   Context (M M': MetricSpace) (f: carrier -> carrier).
   
@@ -140,7 +137,7 @@ Section continuity.
   Proof. exact/scnt_cont. Qed.
 End continuity.
 
-Section sub_metrics.
+Section subspaces.
   Context (M: MetricSpace).
 
   Global Instance subspace (A: subset M): MetricSpace.
@@ -157,4 +154,5 @@ Section sub_metrics.
   Lemma sub_F2MF S T (A: subset S) (f: S -> T):
     F2MF (sub_fun A f) =~= sub_mf A (F2MF f).
   Proof. done. Qed.
-End sub_metrics.
+End subspaces.
+  

@@ -217,9 +217,13 @@ End continuity.
 
 Section sub_metrics.
   Context `{m: metric}.
+
+  Definition sub_met (A: subset M) (p: {x | x \from A} * {x | x \from A}) := d(sval p.1, sval p.2).
+  Arguments sub_met: clear implicits.
   
   Global Instance sub_metric (A: subset M):
-    (fun p => d(sval p.1, sval p.2)) \is_metric_on {x | x \from A}.
+    (sub_met A) \is_metric_on {x | x \from A}.
+    rewrite /sub_met.
     have []:= sub_pseudo_metric A; intros.
     split => // x y; split => [dst | -> ] //.
     exact/eq_sub/dst0_eq.

@@ -192,7 +192,6 @@ Notation "f \sequentially_continuous" :=
   (f \sequentially_continuous_wrt d \and d) (at level 40): metric_scope.
 Notation "f \is_sequentially_continuous" :=
   (f \sequentially_continuous) (at level 40): metric_scope.
-
 Section subspaces.
   Context (M: PseudoMetricSpace).
 

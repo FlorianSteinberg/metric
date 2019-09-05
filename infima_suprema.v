@@ -53,7 +53,7 @@ Section infima.
                         | _ => None
                         end.
 
-  Lemma p_inf_spec: PF2MF p_infimum =~= mf_infimum.
+  Lemma p_inf_spec: pf2MF p_infimum =~= mf_infimum.
   Proof.
     move => A infA; rewrite /p_infimum /=.
     split => [/= | /is_infimum_glb_Rbar spec]; last by have -> := is_glb_Rbar_unique _ _ spec.

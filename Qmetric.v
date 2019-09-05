@@ -157,7 +157,7 @@ End rationals_as_reals.
 Section rationals_and_metric_spaces.
   Context (M: MetricSpace).
   Implicit Types (x y: M).
-  Notation subset:= mf_subset.type.
+  Notation subset := mf_set.subset.
   Lemma dense_Q (A: subset M): A \dense_subset <->
     forall x eps, 0 < Q2R eps -> exists y, y \from A /\ d(x, y) <= Q2R eps.
   Proof.
