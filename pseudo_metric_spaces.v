@@ -181,17 +181,18 @@ Section continuity.
   Proof. exact/cont_scnt. Qed.
 End continuity.
 Notation "f \continuous_in x" :=
-  (continuity_point d d  f x) (at level 35): metric_scope.
+  (continuity_point d d  f x) (at level 35): pseudo_metric_scope.
 Notation continuity_points:= (continuity_points d d).
-Notation "f \continuous" := (continuous d d f) (at level 2): metric_scope.
-Notation "f \is_continuous" := (f \continuous_wrt d \and d) (at level 2): metric_scope.
+Notation "f \continuous" := (continuous d d f) (at level 2): pseudo_metric_scope.
+Notation "f \is_continuous" := (f \continuous_wrt d \and d) (at level 2): pseudo_metric_scope.
 Notation sequential_continuity_points := (sequential_continuity_points d d).
 Notation "f \sequentially_continuous_in x" :=
-  (sequential_continuity_point d d f x) (at level 40): metric_scope.
+  (sequential_continuity_point d d f x) (at level 40): pseudo_metric_scope.
 Notation "f \sequentially_continuous" :=
-  (f \sequentially_continuous_wrt d \and d) (at level 40): metric_scope.
+  (f \sequentially_continuous_wrt d \and d) (at level 40): pseudo_metric_scope.
 Notation "f \is_sequentially_continuous" :=
-  (f \sequentially_continuous) (at level 40): metric_scope.
+  (f \sequentially_continuous_wrt d \and d) (at level 40): pseudo_metric_scope.
+
 Section subspaces.
   Context (M: PseudoMetricSpace).
 

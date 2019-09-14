@@ -26,13 +26,24 @@ Section MetricSpaces.
 
   Global Instance M2PM: PseudoMetricSpace.
   Proof. exists carrier distance; exact/m2pm. Defined.
+
+  Lemma dst_le x y z r r' q:
+    d (x, z) <= r -> d (z, y) <= r' -> r + r' <= q -> d (x, y) <= q.
+  Proof. exact/dst_le. Qed.
+
+  Lemma le_dst x y z r r' q: r + r' <= q -> d(x,z) <= r -> d(z,y) <= r' -> d(x,y) <= q.
+  Proof. exact/le_dst. Qed.
+
+  Lemma dst_lt x y z r r' q: d(x,z) <= r -> d(z,y) <= r' -> r + r' < q -> d(x,y) < q.
+  Proof. exact/dst_lt. Qed.
+
 End MetricSpaces.  
 Coercion M2PM: MetricSpace >-> PseudoMetricSpace.
 
 Section limits.
   Context (M: MetricSpace).
   Implicit Types (x y z: M) (xn yn: sequence_in M).
-  
+
   Lemma lim_sing: limit \is_singlevalued.
   Proof. exact/lim_sing. Qed.
 
@@ -123,10 +134,23 @@ Section Cauchy_sequences.
     xn \fast_Cauchy_sequence_wrt d.
   Proof. exact/cchy_eff_suff. Qed.
 End Cauchy_sequences.  
+Notation "f \continuous_in x" :=
+  (continuity_point d d  f x) (at level 35): metric_scope.
+Notation d := distance.
+Notation continuity_points:= (pseudo_metrics.continuity_points d d).
+Notation "f \continuous" := (continuous d d f) (at level 2): metric_scope.
+Notation "f \is_continuous" := (f \continuous_wrt d \and d) (at level 2): metric_scope.
+Notation sequential_continuity_points := (pseudo_metrics.sequential_continuity_points d d).
+Notation "f \sequentially_continuous_in x" :=
+  (sequential_continuity_point d d f x) (at level 40): metric_scope.
+Notation "f \sequentially_continuous" :=
+  (f \sequentially_continuous_wrt d \and d) (at level 40): metric_scope.
+Notation "f \is_sequentially_continuous" :=
+  (f \sequentially_continuous) (at level 40): metric_scope.
 
 Section continuity.
-  Context (M M': MetricSpace) (f: carrier -> carrier).
-  
+  Context (M M': MetricSpace) (f: M -> M').
+
   Lemma cntp_scntp: continuity_points f \is_subset_of sequential_continuity_points f.
   Proof. exact/cntp_scntp. Qed.
 
@@ -155,4 +179,4 @@ Section subspaces.
     F2MF (sub_fun A f) =~= sub_mf A (F2MF f).
   Proof. done. Qed.
 End subspaces.
-  
+Notation pd:= pseudo_metric_spaces.distance.

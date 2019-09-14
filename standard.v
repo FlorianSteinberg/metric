@@ -107,12 +107,12 @@ Section R_MetricSpace.
   Qed.
 
   Lemma lim_dst (M: PseudoMetricSpace) (xn: sequence_in M) (x: M):
-     xn ~> x <-> (fun n => d(x,(xn n))) \converges_to 0 \wrt (@d R_MetricSpace).
+     xn ~> x <-> (fun n => pd (x,(xn n))) \converges_to 0 \wrt (@d R_MetricSpace).
   Proof.
     split => lmt eps eg0; have [n prp]:= lmt eps eg0; exists n => m ineq.
     - rewrite {1}/d/= Rminus_0_l Rabs_Ropp Rabs_pos_eq; first exact/prp.
       exact/pseudo_metrics.dst_pos.
-    suff: Rabs (0 - d(x, xn m)) <= eps by split_Rabs; lra.
+    suff: Rabs (0 - pd(x, xn m)) <= eps by split_Rabs; lra.
     exact/prp.
   Qed.
 

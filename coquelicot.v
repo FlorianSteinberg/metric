@@ -49,7 +49,7 @@ Coercion NM2MS: NormedModule >-> MetricSpace.
 
 Section PseudoMetricSpaces_and_UniformSpaces.
   Definition PMS2US_mixin (M: PseudoMetricSpace): UniformSpace.mixin_of M.
-    exists (fun x r y => d(x, y) < r).
+    exists (fun x r y => pd(x, y) < r).
     - by move => x [eps eg0]; rewrite dstxx /=.
     - by move => x y e ineq; rewrite pseudo_metrics.dst_sym.
     move => x y z e e' ineq ineq'.
@@ -176,7 +176,7 @@ Section Continuity.
       exists (mkposreal delta dg0) => /= y bll'.
       apply/prp/Rle_lt_trans; first apply/aprx/Rlt_le/bll'.
       by rewrite /=; lra.
-    have [ | [delta dg0] prp]:= cont (fun y => d (f x, y) < eps); first by exists (mkposreal eps eg0).
+    have [ | [delta dg0] prp]:= cont (fun y => pd (f x, y) < eps); first by exists (mkposreal eps eg0).
     exists (delta/2); split => [ | y dst]; first by lra.
     apply/Rlt_le/prp/Rle_lt_trans; first exact/dst.
     rewrite /=; lra.
@@ -186,10 +186,10 @@ Section Continuity.
     continuous f x <-> (f: US2PMS N -> US2PMS M) \continuous_in x.
   Proof.
     split => [cont eps eg0 | cont P [[eps eg0] prp]].
-    - have [ | [delta dg0] dprp]:= cont (fun y => d (f x: US2PMS M, y: US2PMS M) <= eps).
+    - have [ | [delta dg0] dprp]:= cont (fun y => pd (f x: US2PMS M, y: US2PMS M) <= eps).
       + have eg2: 0 < eps/2 by lra.
         exists (mkposreal _ eg2) => y bll.
-        suff : d (f x: US2PMS M, y) <= eps/2 by simpl; lra.
+        suff : pd (f x: US2PMS M, y) <= eps/2 by simpl; lra.
         rewrite /d/=/d_M/=; apply/bnds_inf_leq.
         * by exists 0; rewrite /= => z [[] | ]; lra.
         by left; split; [lra | apply/bll].
@@ -199,7 +199,7 @@ Section Continuity.
     have e2: 0 < Rmin (eps/2) (1/4) by apply/Rmin_pos; lra.
     have [delta [dg0 cnd]]:= cont (Rmin (eps/2) (1/4)) e2.
     exists (mkposreal _ dg0) => y bll.    
-    have : d (f x: US2PMS M, f y) <= Rmin (eps/2) (1/4).
+    have : pd (f x: US2PMS M, f y) <= Rmin (eps/2) (1/4).
     - apply/cnd; rewrite /d/=/d_M/=.
       apply/inf_leq; first exact/dom_d.
       by left; split; first lra.

@@ -4,7 +4,6 @@ Require Import pointwise reals pseudo_metrics.
 Require Import Reals Psatz Classical ChoiceFacts Morphisms ProofIrrelevance ProofIrrelevanceFacts.
 
 Axiom countable_choice: FunctionalCountableChoice.
-Axiom nat_choice: FunctionalCountableChoice_on nat.
 Fact eq_sub T P (a b : {x : T | P x}) : a = b <-> projT1 a = projT1 b.
 Proof.
   split=> [->//|]; move: a b => [a Pa] [b Pb] /= eqab.
@@ -62,7 +61,7 @@ Section metrics.
     exists mu, (fun n => xnk n (mu n)) \converges_to x \wrt d.
   Proof.
     move => lmtlmt /lim_tpmn lmt.
-    have /nat_choice [mu muprp]:
+    have /countable_choice [mu muprp]:
       forall n, exists m, forall k, (m <= k)%nat -> d (xn n, xnk n k) <= /2 ^ n.
     - by move => n; apply/(lmtlmt n (/2^n))/Rinv_0_lt_compat/pow_lt; lra.
     exists mu.
@@ -143,7 +142,7 @@ Section Cauchy_sequences.
   Lemma cchy_fchy xn: xn \Cauchy_wrt d -> exists mu, (xn \o_f mu) \fast_Cauchy_sequence_wrt d.
   Proof.
     move => /cchy_tpmn cchy.    
-    have /nat_choice[mu prp]:= cchy.
+    have /countable_choice[mu prp]:= cchy.
     exists mu => n k /=.
     case/orP: (leq_total (mu n) (mu k)) => ineq.
     - apply/Rle_trans; first by apply/prp/andP.
