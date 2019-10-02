@@ -184,6 +184,10 @@ Section continuity.
   Context `{m0: metric}.
   Context (f: M -> M0).
   
+  Lemma cont_tpmn:
+    f \continuous_wrt d \and d0 <-> forall x n, exists m, forall x', d (x, x') <= /2^m -> d0 (f x, f x') <= /2^n.
+  Proof. exact/cont_tpmn. Qed.
+  
   Lemma cntp_scntp: continuity_points d d0 f \is_subset_of sequential_continuity_points d d0 f.
   Proof. exact/cntp_scntp. Qed.
 

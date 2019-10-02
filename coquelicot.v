@@ -167,7 +167,7 @@ Section PseudoMetricSpaces_and_UniformSpaces.
 End PseudoMetricSpaces_and_UniformSpaces.
 
 Section Continuity.
-  Local Open Scope metric_scope.
+  Local Open Scope pseudo_metric_scope.
   Lemma cntp_cntp_pmtrc (M N: PseudoMetricSpace) (f: M -> N) x:
     f \continuous_in x <-> continuous (f: PMS2US M -> PMS2US N) x.
   Proof.

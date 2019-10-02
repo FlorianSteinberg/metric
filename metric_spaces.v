@@ -135,7 +135,7 @@ Section Cauchy_sequences.
   Proof. exact/cchy_eff_suff. Qed.
 End Cauchy_sequences.  
 Notation "f \continuous_in x" :=
-  (continuity_point d d  f x) (at level 35): metric_scope.
+  (continuity_point d d (f: M2PM _ -> M2PM _) x) (at level 35): metric_scope.
 Notation d := distance.
 Notation continuity_points:= (pseudo_metrics.continuity_points d d).
 Notation "f \continuous" := (continuous d d f) (at level 2): metric_scope.
@@ -151,6 +151,14 @@ Notation "f \is_sequentially_continuous" :=
 Section continuity.
   Context (M M': MetricSpace) (f: M -> M').
 
+  Lemma cntp_tpmn x:
+    f \continuous_in x <-> forall n, exists m, forall x', d (x, x') <= /2^m -> d (f x, f x') <= /2^n.
+  Proof. exact/cntp_tpmn. Qed.
+  
+  Lemma cont_tpmn:
+    f \is_continuous <-> forall x n, exists m, forall x', d (x, x') <= /2^m -> d (f x, f x') <= /2^n.
+  Proof. exact/cont_tpmn. Qed.
+    
   Lemma cntp_scntp: continuity_points f \is_subset_of sequential_continuity_points f.
   Proof. exact/cntp_scntp. Qed.
 

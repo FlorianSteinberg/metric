@@ -356,9 +356,24 @@ Section continuity.
   Definition continuity_point x :=
     forall eps, 0 < eps -> exists delta, 0 < delta /\ forall y, d(x,y) <= delta -> d0(f x, f y) <= eps.
 
+  Lemma cntp_tpmn x:
+    continuity_point x <-> forall n, exists m, forall x', d (x, x') <= /2^m -> d0 (f x, f x') <= /2^n.
+  Proof.
+    split => [cont n | cont eps /dns0_tpmn [n ineq]].
+    - have [delta [/dns0_tpmn [m ineq] prp]]:= cont (/2^n) (tpmn_lt n).
+      by exists m => x' dst; apply/prp/Rlt_le/Rle_lt_trans/ineq.
+    have [m prp]:= cont n.
+    exists (/2^m); split => [ | y dst]; first exact/tpmn_lt.
+    exact/Rlt_le/Rle_lt_trans/ineq/prp.
+  Qed.
+
   Definition continuity_points := make_subset continuity_point.
 
   Definition continuous:= forall x, continuity_point x.
+
+  Lemma cont_tpmn:
+    continuous <-> forall x n, exists m, forall x', d (x, x') <= /2^m -> d0 (f x, f x') <= /2^n.
+  Proof. by split => cont x; apply/cntp_tpmn. Qed.
 
   Lemma cntp_all: continuous <-> continuity_points === All.
   Proof.

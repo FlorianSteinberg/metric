@@ -167,6 +167,14 @@ Section continuity.
   Local Notation continuity_points := (continuity_points d d f).
   Local Notation sequential_continuity_points := (sequential_continuity_points d d f).
   Local Notation sequentially_continuous := (f \sequentially_continuous_wrt d \and d).
+
+  Lemma cntp_tpmn x:
+    continuous_in x <-> forall n, exists m, forall x', d (x, x') <= /2^m -> d (f x, f x') <= /2^n.
+  Proof. exact/cntp_tpmn. Qed.
+  
+  Lemma cont_tpmn:
+    continuous <-> forall x n, exists m, forall x', d (x, x') <= /2^m -> d (f x, f x') <= /2^n.
+  Proof. exact/cont_tpmn. Qed.
   
   Lemma cntp_all: continuous <-> continuity_points === All.
   Proof. exact/cntp_all. Qed.
@@ -193,6 +201,7 @@ Notation "f \sequentially_continuous" :=
 Notation "f \is_sequentially_continuous" :=
   (f \sequentially_continuous_wrt d \and d) (at level 40): pseudo_metric_scope.
 
+Delimit Scope pseudo_metric_scope with pmetric.
 Section subspaces.
   Context (M: PseudoMetricSpace).
 
