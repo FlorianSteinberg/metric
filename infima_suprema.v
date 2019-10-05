@@ -19,8 +19,7 @@ Section infima.
 
   Definition is_infimum A x := is_lower_bound A x /\ is_upper_bound (lower_bounds A) x.
   
-  Lemma is_infimum_glb_Rbar A x:
-    is_infimum A x <-> is_glb_Rbar A (Finite x).
+  Lemma is_infimum_glb_Rbar A x: is_infimum A x <-> is_glb_Rbar A (Finite x).
   Proof.
     rewrite is_glb_Rbar_correct.
     split => [[lb inf] | [lb inf]].
@@ -66,6 +65,7 @@ Section infima.
                       | Finite r => r
                       | _ => 0
                       end.
+
   Notation inf := infimum.
   
   Lemma inf_icf: infimum \is_choice_for mf_infimum.
@@ -195,9 +195,179 @@ Section infima.
 End infima.  
 Notation inf:= infimum.
 
-Section suprema.
-  Definition mf_supremum:= make_mf (fun (A: subset R) => is_lub A).
+Section suprema.  
+  Implicit Types (A: subset R).
+  Local Open Scope metric_scope.
+  Definition upper_bounds A:= make_subset (fun x => is_upper_bound A x).
 
-  Definition supremum A:= iota (mf_supremum A).
+  Definition is_supremum A x := is_upper_bound A x /\ is_lower_bound (upper_bounds A) x.
+  
+  Lemma is_supremum_lub_Rbar A x: is_supremum A x <-> is_lub_Rbar A (Finite x).
+  Proof.
+    rewrite is_lub_Rbar_correct.
+    split => [[ub sup] | [ub sup]].
+    - split.
+      + case; try by case.
+        by move => y [_ Ay]; apply/ub.
+      case => //[ y ass | ass].
+      + apply/sup => z Az.
+        have /=ass' := ass z.
+        by apply/ass'.
+      suff: (x <= x - 1) by lra.
+      apply/sup => y Ay; have /= ass' := ass (Finite y).
+      by exfalso; apply/ass'.
+    split => y Ay; first exact/(ub y).
+    apply/(sup y); case => // [z [_ ] | []]//.
+    exact/Ay.
+  Qed.
+  
+  Definition mf_supremum:= make_mf is_supremum.
+
+  Lemma sup_sing: mf_supremum \is_singlevalued.
+  Proof.
+    move => A sup sup' [bnd inf] [bnd' inf'].
+    suff: sup <= sup' /\ sup' <= sup by lra.
+    by split; [apply/inf | apply/inf'].
+  Qed.
+      
+  Definition p_supremum A := match Lub_Rbar A with
+                        | Finite r => Some r
+                        | _ => None
+                        end.
+
+  Lemma p_sup_spec: pf2MF p_supremum =~= mf_supremum.
+  Proof.
+    move => A supA; rewrite /p_supremum /=.
+    split => [/= | /is_supremum_lub_Rbar spec]; last by have -> := is_lub_Rbar_unique _ _ spec.
+    case spec: (Lub_Rbar A) => [x | | ] // <-.
+    apply/is_supremum_lub_Rbar; rewrite -spec.
+    exact/Lub_Rbar_correct.
+  Qed.
+    
+  Definition supremum A := match Lub_Rbar A with
+                      | Finite r => r
+                      | _ => 0
+                      end.
   Notation sup := supremum.
+  
+  Lemma sup_icf: supremum \is_choice_for mf_supremum.
+  Proof.
+    rewrite /supremum => A [supA val].
+    rewrite (is_lub_Rbar_unique A supA) //.
+    exact/is_supremum_lub_Rbar.
+  Qed.
+    
+  Definition bounded_from_above A := upper_bounds A \from nonempties.
+
+  Definition upper_boundeds:= make_subset bounded_from_above.
+
+  Lemma dom_sup: dom mf_supremum === upper_boundeds \n nonempties.
+  Proof.
+    move => A; split => [[x [ub sup]] | [[y ub] [x Ax]]].
+    - split; first by exists x.
+      apply/not_all_not_ex => mty.
+      suff: x <= x - 1 by lra.
+      by apply/sup => y Ay; exfalso; apply/mty/Ay.
+    have := ub x Ax.
+    case => [ineq | eq]; last by exists x; split => [ | z ubz]; [rewrite eq | exact/ubz].
+    suff /countable_choice [xn xnprp]:
+      forall n, exists (xn: M2PM metric_R), upper_bounds A xn
+                           /\
+                           exists z, A z /\ d (xn, z) <= /2^n.
+    - have xnbnd: forall n, is_upper_bound A (xn n) by move => n; have []:= xnprp n.
+      have /(@fchy_lim_eff R_MetricSpace R_cmplt) [supA lmt]:
+        (xn: sequence_in (M2PM R_MetricSpace)) \fast_Cauchy.
+      + apply cchy_eff_suff => n m nlm.
+        have [_ [z [Az dst]]]:= xnprp m.
+        have [_ [z' [Az' dst']]]:= xnprp n.
+        have := xnbnd n z Az; have := xnbnd m z' Az'.
+        by move : dst dst' => /=; split_Rabs; lra.
+      exists supA.
+      split => [z Az | x' lbx'].
+      + apply/Rge_le/lim_dec/lim_cnst/lim_eff_lim/lmt.
+        by move => n; rewrite/cnst; apply/Rle_ge/xnbnd.
+      apply/cond_leq => eps eg0.
+      have /accf_tpmn [N [pos Nle]] : 0 < eps/2 by lra.
+      have [_ [z [Az dst]]]:= xnprp N.
+      have := lbx' z Az; have := lmt N.
+      by move: dst => /=; split_Rabs; lra.
+    suff prp: forall n, exists (xn: M2PM metric_R), upper_bounds A xn
+                                   /\
+                                   exists z, A z /\ d(xn, z) <= (y - x)/2^n.
+    - move => n.
+      have /accf_tpmn [N [pos Nlxy]]: 0 < /(y - x) by apply/Rinv_0_lt_compat; lra.
+      have [xn [xnlb [z [Az dst]]]]:= prp (N + n)%nat.
+      exists xn; split => //.
+      exists z; split => //.
+      have lt: 0 < 2^n by apply pow_lt; lra.
+      have lt': 0< 2^N by apply/pow_lt; lra.
+      apply/Rle_trans; first exact/dst.
+      rewrite pow_add /Rdiv Rinv_mult_distr; try lra.
+      rewrite -Rmult_assoc -{2}(Rmult_1_l (/2^n)).
+      apply/Rmult_le_compat_r; first by apply/Rlt_le/Rinv_0_lt_compat.
+      rewrite -(Rinv_r (2^N)); try lra.
+      apply/Rmult_le_compat_r; first by apply/Rlt_le/Rinv_0_lt_compat.
+      rewrite -(Rinv_involutive (2^N)); try lra.
+      rewrite -(Rinv_involutive (y - x)); try lra.
+      by apply/Rinv_le_contravar; lra.
+    elim => [ | n [xn [xnlb [z [Az dst]]]]].
+    - by exists y; split; last by exists x; split; last by simpl; split_Rabs; lra.
+    case: (classic (exists z', A z' /\ d(xn, z') <= (y - x)/2^n.+1)) => [ex | /not_ex_all_not nex].
+    - by exists xn.
+    exists (xn - (y - x)/2^n.+1).
+    split => [z' Az' |].
+    - have /not_and_or [nAz' | /Rnot_le_lt dst']:= nex z'; first by exfalso; apply/nAz'.
+      by have := xnlb z' Az'; move: dst' => /=; split_Rabs; lra.
+    have /not_and_or [nAz | /Rnot_le_lt dst']:= nex z; first by exfalso; apply/nAz.
+    exists z; split => //; have xnlz:= xnlb z Az.
+    have xn'lz: z <= xn - (x - y) /2^n.+1.    
+    - have : 0 < (y - x) /2^n.+1 by apply/Rdiv_lt_0_compat/pow_lt; lra.
+      by simpl in dst; move : dst' dst; rewrite [X in _ < X]/=; split_Rabs; lra.
+    rewrite /Rdiv (tpmn_half n) in dst.
+    by move: xn'lz dst' dst => /=; split_Rabs; lra.
+  Qed.
+  
+  Lemma sup_spec A: A \from dom mf_supremum -> sup A \from mf_supremum A.
+  Proof. exact/sup_icf. Qed.
+
+  Lemma sup_eq A r: A \from dom mf_supremum -> r \from mf_supremum A -> sup A = r.
+  Proof.
+    move => fd val.
+    exact/sup_sing/val/sup_icf.
+  Qed.
+
+  Lemma sup_leq A x: A \from dom mf_supremum -> x \from A -> x <= sup A.
+  Proof.
+    move => Afd xfa.
+    have [ub _]:= sup_icf Afd.
+    exact/ub.
+  Qed.
+
+  Lemma bnds_sup_leq A x: A \from upper_boundeds -> x \from A -> x <= sup A.
+  Proof.
+    move => bnd elt; apply/sup_leq => //.
+    by rewrite dom_sup; split; last exists x.
+  Qed.
+  
+  Lemma sup_geq A x: A \from dom mf_supremum -> x \from upper_bounds A -> sup A <= x.
+  Proof.
+    move => Afd lb.
+    have [lbs nf]:= sup_icf Afd.
+    exact/nf.
+  Qed.
+
+  Lemma ne_sup_geq A x: A \from nonempties -> x \from upper_bounds A -> sup A <= x.
+  Proof. by move => ne ub; apply/sup_geq; first by rewrite dom_sup; split => //; exists x. Qed.
+
+  Lemma sup_approx A supA: supA \from mf_supremum A  -> 
+                      forall eps, 0 < eps -> exists x, x \from A /\ supA - eps <= x.
+  Proof.
+    move => [ub nf] eps eg0.
+    apply/not_all_not_ex => all.
+    have := nf (supA - eps).
+    suff: supA <= supA - eps by lra.
+    apply/nf => z Az.
+    have /not_and_or [nAz | /Rnot_le_lt]:= all z; try lra.
+    by exfalso; apply/nAz.
+  Qed.
 End suprema.

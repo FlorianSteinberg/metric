@@ -77,6 +77,15 @@ Section R_MetricSpace.
     exact/lim_pos/ineq/limB.
   Qed.
 
+  Lemma lim_dec xn yn x y:
+    (forall i, xn i >= yn i) -> xn ~> x -> yn ~> y -> x >= y.
+  Proof.
+    move => prp lim lim'.
+    have ineq: forall i, 0 <= xn i - yn i by move => i; have:= prp i; lra.
+    suff: 0 <= x - y by lra.
+    exact/lim_pos/ineq/limB.
+  Qed.
+
   Definition scale (x: R) xn := (fun n => (x * (xn n))): sequence_in R.
 
   Lemma scale_ptw r: scale r =1 ptw_op Rmult (cnst r).
