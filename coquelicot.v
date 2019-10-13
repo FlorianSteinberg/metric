@@ -2,13 +2,14 @@
 From mathcomp Require Import all_ssreflect.
 From rlzrs Require Import all_rlzrs.
 Require Import pointwise reals all_metrics all_metric_spaces standard infima_suprema.
-Require Import Reals Psatz.
+Require Import Reals Psatz ChoiceFacts.
 From Coquelicot Require Import Coquelicot.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
+Axiom nat_choice: FunctionalCountableChoice.
 Lemma minus_eq (G: AbelianGroup) (x y: G): minus x y = zero <-> x = y.
 Proof.
   split => [eq | -> ]; last exact/minus_eq_zero.
@@ -23,11 +24,9 @@ Instance AR2MS (R: AbsRing): MetricSpace.
   - by move => x y; apply/abs_minus.
   - split => [eq | ->]; last by rewrite minus_eq_zero; apply/abs_zero.
     exact/minus_eq/abs_eq_zero.
-  move => z x y.
-  rewrite /minus.
+  move => z x y /=.
   apply/Rle_trans/abs_triangle.
-  suff ->: plus x (opp y) = plus (plus x (opp z)) (plus z (opp y)) by apply/Rle_refl.
-  by rewrite plus_assoc -(plus_assoc x) plus_opp_l plus_zero_r.
+  by rewrite (minus_trans y z x); apply/Rle_refl.
 Defined.
 
 Coercion AR2MS: AbsRing >-> MetricSpace.
@@ -38,11 +37,9 @@ Instance NM2MS (K: AbsRing) (V: NormedModule K): MetricSpace.
   - by move => x y; rewrite -{1}opp_minus norm_opp.
   - split => [eq | ->]; last by rewrite minus_eq_zero norm_zero.
     exact/minus_eq/norm_eq_zero.
-  move => z x y.
-  rewrite /minus.
+  move => z x y /=.
   apply/Rle_trans/norm_triangle.
-  suff ->: plus x (opp y) = plus (plus x (opp z)) (plus z (opp y)) by apply/Rle_refl.
-  by rewrite plus_assoc -(plus_assoc x) plus_opp_l plus_zero_r.
+  by rewrite (minus_trans y z x); apply/Rle_refl.
 Defined.
 
 Coercion NM2MS: NormedModule >-> MetricSpace.
@@ -53,10 +50,10 @@ Section PseudoMetricSpaces_and_UniformSpaces.
     - by move => x [eps eg0]; rewrite dstxx /=.
     - by move => x y e ineq; rewrite pseudo_metrics.dst_sym.
     move => x y z e e' ineq ineq'.
-    apply/Rle_lt_trans; first exact/(pseudo_metrics.dst_trngl y).
+    apply/Rle_lt_trans; first by apply (pseudo_metrics.dst_trngl y).
     exact/Rplus_lt_compat.
   Defined.
-  
+
   Canonical PMS2US (M: PseudoMetricSpace):= UniformSpace.Pack M (PMS2US_mixin M) M.
 
   Context (M: UniformSpace).
@@ -69,7 +66,7 @@ Section PseudoMetricSpaces_and_UniformSpaces.
   
   Lemma dom_d x y: ((distance_bounds x y) \u [1,oo)) \from dom mf_infimum.
   Proof.
-    rewrite dom_inf.
+    rewrite dom_inf; last exact/nat_choice.
     split; first by exists 0 => z [[Az] | /= l1z]; lra.
     by exists 1; right => /=; lra.
   Qed.
@@ -77,7 +74,7 @@ Section PseudoMetricSpaces_and_UniformSpaces.
   Definition d_M (x y: M):= inf ((distance_bounds x y) \u [1,oo)).
 
   Lemma d_inf x y: mf_infimum ((distance_bounds x y) \u [1,oo)) (d_M x y).
-  Proof. exact/inf_spec/dom_d. Qed.
+  Proof. by apply/inf_spec/dom_d. Qed.
 
   Lemma d_pos x y: 0 <= d_M x y.
   Proof.
@@ -190,7 +187,7 @@ Section Continuity.
       + have eg2: 0 < eps/2 by lra.
         exists (mkposreal _ eg2) => y bll.
         suff : pd (f x: US2PMS M, y) <= eps/2 by simpl; lra.
-        rewrite /d/=/d_M/=; apply/bnds_inf_leq.
+        rewrite /d/=/d_M/=; apply/bnds_inf_leq; first exact/nat_choice.
         * by exists 0; rewrite /= => z [[] | ]; lra.
         by left; split; [lra | apply/bll].
       exists (Rmin (delta/2) (1/4)).

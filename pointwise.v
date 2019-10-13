@@ -63,7 +63,7 @@ Section pointwise.
     by move => ass x y z; apply/functional_extensionality => n; apply/ass.
   Qed.  
   
-  Definition curry R S T (f: R -> S -> T) rs := f rs.1 rs.2.
+  Definition uncurry R S T (f: R -> S -> T) rs := f rs.1 rs.2.
 End pointwise.
 Notation ptwn_op := (@ptw_op nat).
 Notation ptwn := (@ptw nat).

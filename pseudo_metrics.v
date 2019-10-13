@@ -1,26 +1,40 @@
 From mathcomp Require Import ssreflect seq ssrfun ssrbool ssrnat.
 From mf Require Import all_mf.
 Require Import pointwise reals.
-Require Import Reals Psatz Morphisms.
+Require Import Reals Psatz Morphisms ChoiceFacts Classical.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
+Delimit Scope pseudometric_scope with pmetric.
+Local Open Scope pseudometric_scope.
 Local Open Scope R_scope.
 Section pseudometrics.
-  Class pseudometric `{M: Type} (d: M * M -> R) :=
+  Class is_pseudometric `{M: Type} (d: M * M -> R) :=
     {
-      dst_pos: forall x y, 0 <= d(x,y);
-      dst_sym: forall x y, d(x,y) = d(y,x);
-      dstxx: forall x, d(x,x) = 0;
-      dst_trngl: forall z x y, d(x,y) <= d(x,z) + d(z,y);
+      positive: forall x y, 0 <= d(x,y);
+      symmetric: forall x y, d(x,y) = d(y,x);
+      reflexive: forall x, d(x,x) = 0;
+      triangle_inequality: forall x y z, d(x,y) <= d(x,z) + d(z,y);
     }.
-
-  Context M (d: M * M -> R).
-  Hypothesis (pm: pseudometric d).
+  Local Notation "p /is_pseudometric":= (is_pseudometric p) (at level 30).
+  
+  Context `{is_pseudometric}.
   Implicit Types (x y z: M).
-    
+
+  Lemma dst_pos x y: 0 <= d(x,y).
+  Proof. by apply positive. Qed.
+
+  Lemma dst_sym x y: d(x,y) = d(y,x).
+  Proof. by apply symmetric. Qed.
+
+  Lemma dstxx x: d(x,x) = 0.
+  Proof. by apply reflexive. Qed.
+
+  Lemma dst_trngl z x y: d(x,y) <= d(x,z) + d(z,y).
+  Proof. by apply triangle_inequality. Qed.
+  
   Lemma dst_le x y z r r' q: d(x,z) <= r -> d(z,y) <= r' -> r + r' <= q -> d(x,y) <= q.
   Proof.
     move => ineq ienq' add.
@@ -36,20 +50,21 @@ Section pseudometrics.
     by apply/Rle_lt_trans/add/Rle_trans/Rplus_le_compat; first exact/dst_trngl.
   Qed.
 End pseudometrics.
-Notation "d \is_pseudo_metric_on M" := (@pseudometric M d) (at level 36): metric_scope.
-Notation "d \is_pseudo_metric" := (pseudometric d) (at level 36): metric_scope.
+Notation "d \is_pseudometric_on M" := (@is_pseudometric M d) (at level 36): pseudometric_scope.
+Notation "d \is_pseudometric" := (is_pseudometric d) (at level 36): pseudometric_scope.
 
+Delimit Scope metric_scope with metric.
 Local Open Scope metric_scope.
 Section limits.
-  Context M (d: M * M -> R).
-  Hypothesis (pm: d \is_pseudo_metric).
+  Context `{is_pseudometric}.
   Definition limit M (d: M * M -> R) := make_mf (fun xn x =>
     forall eps, 0 < eps -> exists N, forall m,
           (N <= m)%nat -> d (x,xn m) <= eps).
+
   Local Notation "x \limits xn \wrt d" := (limit d xn x) (at level 4).
+  Local Notation "x \is_limit_of xn \wrt d" := (limit d xn x) (at level 4).
   
-  Global Instance lim_prpr M d:
-    Proper (@eqfun M nat ==> @set_equiv M) (limit d).
+  Global Instance lim_prpr M d: Proper (@eqfun M nat ==> @set_equiv M) (limit d).
   Proof.
     move => xn yn eq x.
     split => lim eps eg0; have [N prp]:= lim eps eg0; exists N => m.
@@ -63,46 +78,60 @@ Section limits.
   Proof.
     move => limxnx limxnx'.
     apply/cond_eq => eps epsg0.
-    rewrite Rminus_0_r Rabs_pos_eq; last exact/dst_pos.
+    rewrite Rminus_0_r Rabs_pos_eq; last by apply dst_pos.
     have [ | N Nprp]:= limxnx (eps/3); try lra.
     have [ | N' N'prp]:= limxnx' (eps/3); try lra.
     pose k:= maxn N N'.
-    apply/dst_lt; first exact/Nprp/leq_maxl/N'.
+    apply/(@dst_lt _ _ H); first by apply/Nprp/leq_maxl/N'.
     - rewrite dst_sym; apply/N'prp/leq_maxr.
     lra.
   Qed.
 
   Lemma lim_cnst x: x \limits (cnst x) \wrt d.
-  Proof.
-    exists 0%nat; rewrite/cnst dstxx; intros.
-    lra.
-  Qed.
+  Proof. by exists 0%nat; rewrite/cnst dstxx; intros; lra. Qed.
   
   Lemma lim_tpmn xn x: x \limits xn \wrt d <->
     (forall n, exists N, forall m, (N <= m)%nat -> d(x,xn m) <= /2 ^ n).
   Proof.
-  split => [lim n | lim eps eg0].
-  - have [ | N prp]:= lim (/2 ^ n); first by apply/Rinv_0_lt_compat/pow_lt; lra.
-    by exists N.
-  have [n ineq]:= accf_tpmn eg0.
-  have [N prp]:= lim n.
-  exists N => m Nlm.
-  exact/Rlt_le/Rle_lt_trans/ineq.2/prp.
+    split => [lim n | lim eps eg0].
+    - case: (lim (/2 ^ n)) => [ | N]; last by exists N.
+      by apply/Rinv_0_lt_compat/pow_lt; lra.
+    have [n [? ineq]]:= accf_tpmn eg0.
+    have [N prp]:= lim n; exists N => ? ?.
+    exact/Rlt_le/Rle_lt_trans/ineq/prp.
   Qed.
   
-  Lemma dst0_tpmn x y:
-    (forall n, d(x,y) <= / 2 ^ n) <-> d(x,y) = 0.
+  Lemma dst0_tpmn x y: d(x,y) = 0 <-> forall n, d(x,y) <= / 2 ^ n.
   Proof.
-    split => [prp | ->]; last exact/tpmn_pos.
-    apply/cond_eq_f => [ | n ineq]; first exact/accf_tpmn.
-    rewrite /R_dist Rminus_0_r Rabs_pos_eq; first exact/prp.
-    exact/dst_pos.
+    split => [-> | ?]; first exact/tpmn_pos.
+    apply/cond_eq_f; first exact/accf_tpmn.
+    rewrite /R_dist Rminus_0_r Rabs_pos_eq //.
+    by apply dst_pos.
   Qed.
+
+  Lemma lim_lim_choice xnk xn x:
+    FunctionalCountableChoice_on nat ->
+    (forall n, (xn n) \limits (xnk n) \wrt d) -> x \limits xn \wrt d ->
+    exists mu, x \limits (fun n => xnk n (mu n)) \wrt d.
+  Proof.
+    move => choice lmtlmt /lim_tpmn lmt.
+    have /choice [mu muprp]:
+      forall n, exists m, forall k, (m <= k)%nat -> d (xn n, xnk n k) <= /2 ^ n.
+    - by move => n; apply/(lmtlmt n (/2^n))/Rinv_0_lt_compat/pow_lt; lra.
+    exists mu.
+    apply/lim_tpmn => n.
+    have [N prp]:= lmt (n.+1).
+    exists (maxn n.+1 N) => k ineq.
+    apply/(le_dst _)/muprp => //; last exact/prp/leq_trans/ineq/leq_maxr.
+    rewrite [X in _ <= X]tpmn_half.
+    apply/Rplus_le_compat/Rinv_le_contravar/Rle_pow/leP/leq_trans/ineq/leq_maxl; try lra.
+    by apply/pow_lt; lra.
+  Qed.    
 End limits.
-Notation "xn \converges_to x \wrt d" := (limit d xn x) (at level 23): metric_scope.
+Notation "xn \converges_to x \wrt d" := (limit d xn x) (at level 23): pseudometric_scope.
 
 Section density.
-  Context `{pm: pseudometric}.
+  Context `{pm: is_pseudometric}.
 
   Definition dense_subset (A: subset M):=
     forall x eps, eps > 0 -> exists y, y \from A /\ d(x,y) <= eps.
@@ -110,8 +139,8 @@ Section density.
   Global Instance dns_prpr: Proper (@set_equiv M ==> iff) dense_subset.
   Proof.
     move => A B eq; split => dns x eps eg0; have [y []]:= dns x eps eg0; exists y.
-    - by rewrite -eq.
-    by rewrite eq.
+    - by rewrite <-eq.
+    by rewrite ->eq.
   Qed.
     
   Lemma dns_tpmn (A: subset M):
@@ -124,7 +153,7 @@ Section density.
     exact/Rlt_le/Rle_lt_trans/ineq.2.
   Qed.
 
-  Definition sequence := nat -> M.
+  Local Notation sequence := (nat -> M).
   
   Definition dense_sequence (r: sequence) :=
     forall x eps, 0 < eps -> exists n, d(x,r n) <= eps.
@@ -142,10 +171,10 @@ Section density.
   Proof.
     split => [dns x n| dns x eps eg0]; first apply/dns.
     - by apply/Rinv_0_lt_compat/pow_lt; lra.
-    have [n ineq]:= accf_tpmn eg0.
+    have [n [_ ineq]]:= accf_tpmn eg0.
     have [m prp]:= dns x n.
     exists m.
-    exact/Rlt_le/Rle_lt_trans/ineq.2/prp.
+    exact/Rlt_le/Rle_lt_trans/ineq/prp.
   Qed.
 
   Definition closure A := make_subset (fun (x: M) =>
@@ -159,61 +188,81 @@ Section density.
     split => [dns x | eq x]; first by split => // _; apply/dns.
     by have [_ prp]:= eq x; apply/prp.
   Qed.
+
+  Lemma clos_spec_choice A x:
+    FunctionalCountableChoice_on M ->
+    x \from closure A <->
+                     exists (xn: sequence), (forall n, xn n \from A) /\ xn \converges_to x \wrt d.
+  Proof.
+    move => choice; split => [clos | [xn [prp lmt]] eps eg0].
+    - have /choice [xn prp]: forall n, exists y, d(y, x) <= /2^n /\ A y.
+      + move => n.
+        have [ | y []]:= clos (/2^n); first by apply/Rinv_0_lt_compat/pow_lt; lra.
+        by exists y; rewrite dst_sym.
+      exists xn; split => [n | ]; first by have []:= prp n.
+      apply/lim_tpmn => n; exists n => k ineq.
+      rewrite dst_sym; apply/Rle_trans; first exact/(prp k).1.
+      apply/Rinv_le_contravar/Rle_pow/leP => //; try lra.
+      by apply/pow_lt; lra.
+    have [n cnd]:= lmt eps eg0.
+    by exists (xn n); split; [apply/prp | apply/(cnd n)].
+  Qed.
 End density.
-Notation sequence_in M := (@sequence M).
+Notation sequence_in M := (nat -> M).
 Arguments dense_subset: clear implicits.
 Arguments dense_subset {M} (d).
-Notation "A \dense_subset_wrt d" := (dense_subset d A) (at level 35): metric_scope.
+Notation "A \dense_subset_wrt d" := (dense_subset d A) (at level 35): pseudometric_scope.
 Arguments dense_sequence: clear implicits.
 Arguments dense_sequence {M} (d).
-Notation "xn \dense_wrt d":= (dense_sequence d xn) (at level 35): metric_scope.
-Notation "xn \dense_sequence_wrt d":= (dense_sequence d xn) (at level 35): metric_scope.
+Notation "xn \dense_wrt d":= (dense_sequence d xn) (at level 35): pseudometric_scope.
+Notation "xn \dense_sequence_wrt d":= (dense_sequence d xn) (at level 35): pseudometric_scope.
 Arguments closure: clear implicits.
 Arguments closure {M} (d).
-Notation "A \closed_wrt d":= (closure d A) (at level 35): metric_scope.
+Notation "A \closed_wrt d":= (closure d A) (at level 35): pseudometric_scope.
 
 Section Cauchy_sequences.
-  Context `{pm: pseudometric}.
+  Context `{is_pseudometric}.
   Implicit Types (x y z: M) (xn yn: sequence_in M).
   Notation limit := (limit d).
 
-  Definition Cauchy_sequence xn :=
-    forall eps, 0 < eps -> exists N, forall n m,
-          (N <= n)%nat -> (N <= m)%nat -> d(xn n, xn m) <= eps.
-
-  Definition Cauchy_sequences := make_subset Cauchy_sequence.
+  Definition Cauchy_sequences := make_subset (fun xn =>
+    forall eps, 0 < eps -> exists N, forall n m, (N <= n)%nat -> (N <= m)%nat -> d(xn n, xn m) <= eps).
   
   Lemma lim_cchy: dom limit \is_subset_of Cauchy_sequences.
   Proof.
     move => xn [x lim] eps eg0.
     have [ | N prp]:= lim (eps/2); first by lra.
     exists N => n m ineq ineq'.
-    apply/dst_le;first by rewrite dst_sym; apply/prp.
-    - exact/prp.
+    apply/(@dst_le _ _ H); try exact/prp; first by rewrite dst_sym; apply/prp.
     lra.
   Qed.
   
   Definition complete := Cauchy_sequences \is_subset_of dom limit.
       
-  Lemma cchy_tpmn xn: Cauchy_sequence xn <->
-    (forall k, exists N, forall n m,
-            (N <= n <= m)%nat -> d (xn n, xn m) <= /2^k).
+  Lemma cchy_tpmn xn: xn \from Cauchy_sequences <->
+    forall k, exists N, forall n m, (N <= n <= m)%nat -> d (xn n, xn m) <= /2^k.
   Proof.
-    split => [cchy k | ass eps epsg0].
-    - have [ | N prp]:= cchy (/2 ^ k).
-      + by apply/Rinv_0_lt_compat/pow_lt; lra.
-      exists N => n m /andP [ineq ineq'].
-      exact/prp/leq_trans/ineq'.
-    have [N [g0 /Rlt_le ineq]]:= accf_tpmn epsg0.
-    have [N' N'prp]:= ass N.
-    exists N' => n m nineq mineq.
+    split => [cchy k | ass eps /dns0_tpmn [N /Rlt_le ineq]].
+    - have [ | N prp]:= cchy (/2 ^ k); first exact/tpmn_lt.
+      by exists N => n m /andP [? ineq]; apply/prp/leq_trans/ineq.
+    have [N' N'prp]:= ass N; exists N' => n m ? ?.
     case/orP: (leq_total n m) => ineq'.
     - by apply/Rle_trans; first exact/N'prp/andP.
     by rewrite dst_sym; apply/Rle_trans; first apply/N'prp/andP.
   Qed.
 
-  Definition eventually_big mu:= forall (n: nat), exists N, forall m,
-          (N <= m)%nat -> (n <= mu m)%nat.
+  Definition Cauchy_sequences_with_modulus mu := make_subset (fun xn =>
+    forall k n m, (mu k <= n <= m)%nat -> d (xn n, xn m) <= /2^k).
+
+  Lemma chym_subs mu: Cauchy_sequences_with_modulus mu \is_subset_of Cauchy_sequences.
+  Proof. by move => xn chy; apply/cchy_tpmn => k; exists (mu k); apply/chy. Qed.
+    
+  Lemma cchy_mod_exists_choice xn:
+    FunctionalCountableChoice_on nat ->
+    xn \from Cauchy_sequences <-> exists mu, xn \from Cauchy_sequences_with_modulus mu.
+  Proof. by move => choice; split => [/cchy_tpmn /choice | [mu]]//; apply/chym_subs. Qed.
+
+  Definition eventually_big mu:= forall (n: nat), exists N, forall m, (N <= m)%nat -> (n <= mu m)%nat.
 
   Lemma lim_evb xn mu (x: M): limit xn x -> eventually_big mu -> limit (xn \o_f mu) x.
   Proof.
@@ -224,33 +273,30 @@ Section Cauchy_sequences.
     exact/prp/ineq/ineq'. 
   Qed.
   
-  Lemma cchy_evb xn mu: Cauchy_sequence xn -> eventually_big mu -> Cauchy_sequence (xn \o_f mu).
+  Lemma cchy_evb xn mu:
+    xn \from Cauchy_sequences -> eventually_big mu -> (xn \o_f mu) \from Cauchy_sequences.
   Proof.
-    move => cchy evb eps eg0.
-    have [N prp]:= cchy eps eg0.
+    move => cchy evb eps /cchy [N prp].
     have [N' le]:= evb N.
-    exists N' => n m ineq ineq'; apply/prp/le; last exact/ineq'.
+    exists N' => n m ineq ineq'; apply/prp/le/ineq'.
     exact/le/ineq.
   Qed.
 End Cauchy_sequences.
-Arguments Cauchy_sequence: clear implicits.
-Arguments Cauchy_sequence {M} (d).
 Arguments Cauchy_sequences: clear implicits.
 Arguments Cauchy_sequences {M} (d).
-Notation "xn \Cauchy_wrt d" := (xn \from Cauchy_sequences d) (at level 45): metric_scope.
-Notation "xn \Cauchy_sequence_wrt d" := (xn \from Cauchy_sequences d) (at level 45): metric_scope.
-Notation "xn \is_Cauchy_wrt d" := (xn \from Cauchy_sequences d) (at level 45): metric_scope.
+Notation "xn \Cauchy_wrt d" := (xn \from Cauchy_sequences d) (at level 45): pseudometric_scope.
+Notation "xn \Cauchy_sequence_wrt d" := (xn \from Cauchy_sequences d) (at level 45): pseudometric_scope.
+Notation "xn \is_Cauchy_wrt d" := (xn \from Cauchy_sequences d) (at level 45): pseudometric_scope.
 Notation "xn \is_Cauchy_sequence_wrt d" :=
-  (xn \from Cauchy_sequences d) (at level 45): metric_scope.
+  (xn \from Cauchy_sequences d) (at level 45): pseudometric_scope.
 Arguments complete: clear implicits.
 Arguments complete {M} (d).
-Notation "d \is_complete" := (complete d) (at level 45): metric_scope.
-Notation "d \is_complete_metric" := (complete d) (at level 45): metric_scope.
+Notation "d \is_complete" := (complete d) (at level 45): pseudometric_scope.
+Notation "d \is_complete_metric" := (complete d) (at level 45): pseudometric_scope.
 
 Section efficient_convergence.
-  Context `{pm: pseudometric}.
+  Context `{pm: is_pseudometric}.
   Local Notation limit := (limit d).
-  Local Notation Cauchy_sequence := (Cauchy_sequence d).
   Local Notation Cauchy_sequences:= (Cauchy_sequences d).
   Local Notation complete := (complete d).
 
@@ -277,7 +323,7 @@ Section efficient_convergence.
   Proof.
     move => xn x; split => [lim | [fchy lim] n].
     - split => [n m | eps epsg0].
-      apply/dst_le/Rle_refl/lim; first by rewrite dst_sym; apply/lim.
+      apply/(@dst_le _ _ pm)/Rle_refl/lim; first by rewrite dst_sym; apply/lim.
       have [n ineq]:= accf_tpmn epsg0.
       exists n => m nlm.
       apply/Rlt_le/Rle_lt_trans/ineq.2/Rle_trans; first exact/lim.
@@ -292,7 +338,7 @@ Section efficient_convergence.
     have [ | N prp]:= lim (/2 ^ m.+1); first by apply/Rinv_0_lt_compat/pow_lt; lra.
     rewrite (tpmn_half m) -Rplus_assoc Rplus_comm.
     apply/Rle_trans/Rplus_le_compat.
-    - + exact/(dst_trngl (xn (maxn m.+1 N))).
+    - by apply (dst_trngl (xn (maxn m.+1 N))).
     - exact/prp/leq_maxr.
     rewrite dst_sym; apply/Rle_trans; first exact/fchy.
     apply/Rplus_le_compat_l/Rinv_le_contravar/Rle_pow/leP/leq_maxl; try lra.
@@ -301,26 +347,40 @@ Section efficient_convergence.
     
   Lemma lim_eff_lim : limit \extends efficient_limit.
   Proof.
-    rewrite lim_eff_spec {2}[limit]restr_all.
+    rewrite ->lim_eff_spec.
+    rewrite {2}[limit]restr_all.
     exact/exte_restr/subs_all.
   Qed.
 
-  Lemma fchy_lim_eff: complete ->
-    fast_Cauchy_sequences === dom efficient_limit.
+  Lemma fchy_lim_eff: complete -> fast_Cauchy_sequences === dom efficient_limit.
   Proof.
     move => cmplt xn; split => [cchy | [x /lim_eff_spec []]]//.
-    rewrite lim_eff_spec dom_restr_spec; split => //.
+    rewrite ->lim_eff_spec; rewrite ->dom_restr_spec; split => //.
     exact/cmplt/fchy_cchy.
   Qed.  
 
+  Lemma cchy_fchy_choice xn: FunctionalCountableChoice_on nat ->
+    xn \Cauchy_wrt d -> exists mu, (xn \o_f mu) \from fast_Cauchy_sequences.
+  Proof.
+    move => choice /cchy_tpmn /choice [mu prp].    
+    exists mu => n k /=.
+    case/orP: (leq_total (mu n) (mu k)) => ineq.
+    - apply/Rle_trans; first by apply/prp/andP.
+      rewrite -[X in X <= _]Rplus_0_r; apply/Rplus_le_compat_l.
+      by apply/Rlt_le/Rinv_0_lt_compat/pow_lt; lra.
+    rewrite dst_sym; apply/Rle_trans; first by apply/prp/andP.
+    rewrite -[X in X <= _]Rplus_0_l; apply/Rplus_le_compat_r.
+    by apply/Rlt_le/Rinv_0_lt_compat/pow_lt; lra.
+  Qed.
+
   Lemma lim_eff_dst xn x y: efficient_limit xn x -> efficient_limit xn y -> d(x, y) = 0.
-  Proof. by move => lim lim'; apply/lim_dst/lim_eff_lim/lim'/lim_eff_lim/lim. Qed.
+  Proof. by move => lim lim'; apply/(@lim_dst _ _ pm)/lim_eff_lim/lim'/lim_eff_lim/lim. Qed.
 
   Lemma lim_tight_lim_eff: limit \tightens efficient_limit.
   Proof.
     move => xn [x lim]; split => [ | y lim' n]; first by exists x; apply/lim_eff_lim.
-    apply/Rle_trans; first exact/(dst_trngl x).
-    have ->: d(y, x) = 0 by apply/lim_dst/lim_eff_lim/lim.
+    apply/Rle_trans; first by apply (dst_trngl x).
+    have ->: d(y, x) = 0 by apply/(@lim_dst _ _ pm)/lim_eff_lim/lim.
     by rewrite Rplus_0_l; apply/lim.
   Qed.
 
@@ -338,18 +398,18 @@ Arguments fast_Cauchy_sequence {M} (d).
 Arguments fast_Cauchy_sequences: clear implicits.
 Arguments fast_Cauchy_sequences {M} (d).
 Notation "xn \fast_Cauchy_wrt d" :=
-  (xn \from fast_Cauchy_sequences d) (at level 45): metric_scope.
+  (xn \from fast_Cauchy_sequences d) (at level 45): pseudometric_scope.
 Notation "xn \fast_Cauchy_sequence_wrt d" :=
-  (xn \from fast_Cauchy_sequences d) (at level 45): metric_scope.
+  (xn \from fast_Cauchy_sequences d) (at level 45): pseudometric_scope.
 Notation "xn \is_fast_Cauchy_sequence_wrt d" :=
-  (xn \from fast_Cauchy_sequences d) (at level 45): metric_scope.
+  (xn \from fast_Cauchy_sequences d) (at level 45): pseudometric_scope.
 Arguments efficient_limit: clear implicits.
 Arguments efficient_limit {M} (d).
-Notation "x \efficient_limit_of xn \wrt d" := (efficient_limit d xn x) (at level 45): metric_scope.
+Notation "x \efficient_limit_of xn \wrt d" := (efficient_limit d xn x) (at level 45): pseudometric_scope.
 
 Section continuity.
-  Context `{pm: pseudometric}.
-  Context `{pm0: pseudometric}.
+  Context `{pm: is_pseudometric}.
+  Context `{pm0: is_pseudometric}.
   Context (f: M -> M0).
   Implicit Types (x y: M) (xn yn: sequence_in M).
   
@@ -394,6 +454,7 @@ Section continuity.
     split => [cont x | eq x]; last exact/eq.
     by split => // _; apply/cont.
   Qed.
+
   Lemma cntp_scntp x: continuity_point x -> sequential_continuity_point x.
   Proof.
     move => cont xn lmt eps eg0.
@@ -405,18 +466,42 @@ Section continuity.
 
   Lemma cont_scnt: continuous -> sequentially_continuous.
   Proof. by move => cont x; apply/cntp_scntp. Qed.
+
+  Lemma scnt_cont_choice:
+    FunctionalCountableChoice_on M -> sequentially_continuous -> continuous.
+  Proof.    
+    move => choice scnt x eps eg0.
+    apply/not_all_not_ex => prp.
+    have /choice [xn xnprp]: forall n, exists y, d(x, y) <= /2^n /\ eps < d0(f x, f y).
+    - move => n; have /not_and_or [ | cnd]:= (prp (/2 ^ n)).
+      + by have : 0 < /2^n by apply/Rinv_0_lt_compat/pow_lt; lra.
+      apply/not_all_not_ex => asd.
+      apply/cnd => y dst.
+      have /not_and_or [ineq | ineq]:= asd y; last exact/Rnot_lt_le.
+      lra.
+    have lmt: xn \converges_to x \wrt d.
+    - rewrite ->lim_tpmn => n.
+      exists n => k ineq; have [le _]:= xnprp k.
+      apply/Rle_trans; first exact/le.
+      apply/Rinv_le_contravar/Rle_pow; try lra; first by apply/pow_lt; lra.
+      exact/leP.
+    have [K cnd]:= scnt x xn lmt eps eg0.
+    have []:= xnprp K.
+    suff: d0 (f x, f (xn K)) <= eps by lra.
+    exact/cnd.
+  Qed.
 End continuity.
 Arguments continuity_point: clear implicits.
 Arguments continuity_point {M} (d) {M0} (d0).
 Arguments continuity_points: clear implicits.
 Arguments continuity_points {M} (d) {M0} (d0).
 Notation "f \continuous_wrt d \and d0 \in x" :=
-  (continuity_point d d0 f x) (at level 35): metric_scope.
+  (continuity_point d d0 f x) (at level 35): pseudometric_scope.
 Notation continuous_wrt d d0 := (@continuous _ d _ d0).
 Notation "f \continuous_wrt d \and d0" :=
-  (continuous_wrt d d0 f) (at level 2): metric_scope.
+  (continuous_wrt d d0 f) (at level 30): pseudometric_scope.
 Notation "f \is_continuous_wrt d \and d0" :=
-  (continuous_wrt d d0 f) (at level 2): metric_scope.
+  (continuous_wrt d d0 f) (at level 30): pseudometric_scope.
 Arguments sequential_continuity_points: clear implicits.
 Arguments sequential_continuity_points {M} (d) {M0} (d0).
 Arguments sequential_continuity_point: clear implicits.
@@ -424,19 +509,19 @@ Arguments sequential_continuity_point {M} (d) {M0} (d0).
 Arguments sequentially_continuous: clear implicits.
 Arguments sequentially_continuous {M} (d) {M0} (d0).
 Notation "f \sequentially_continuous_wrt d \and d0 \in x" :=
-  (sequential_continuity_point d d0 f x) (at level 40): metric_scope.
+  (sequential_continuity_point d d0 f x) (at level 40): pseudometric_scope.
 Notation "f \sequentially_continuous_wrt d \and d0" :=
-  (sequentially_continuous d d0 f) (at level 40): metric_scope.
+  (sequentially_continuous d d0 f) (at level 40): pseudometric_scope.
 Notation "f \is_sequentially_continuous_wrt d \and d0" :=
-  (sequentially_continuous d d0 f) (at level 40): metric_scope.
+  (sequentially_continuous d d0 f) (at level 40): pseudometric_scope.
 
 Section subpseudometric.
-  Context `{pm: pseudometric}.
+  Context `{pm: is_pseudometric}.
   Global Instance sub_pseudo_metric (A: subset M):
-    (fun xy => d (sval xy.1, sval xy.2)) \is_pseudo_metric_on {x | x \from A}.
-    split; first by move => x y; apply/dst_pos.
-    - by move => x y; apply/dst_sym.
-    - by move => x; apply/dstxx.
-    by move => x y z; apply/dst_trngl.
+    (fun xy => d (sval xy.1, sval xy.2)) \is_pseudometric_on {x | x \from A}.
+    split; first by move => x y; apply dst_pos.
+    - by move => x y; apply dst_sym.
+    - by move => x; apply dstxx.
+    by move => x y z; apply dst_trngl.
   Defined.
 End subpseudometric.

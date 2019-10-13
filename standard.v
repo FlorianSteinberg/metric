@@ -12,9 +12,9 @@ Local Open Scope metric_scope.
 Local Open Scope R_scope.
 
 Canonical MS2M_S (M: MetricSpace): Metric_Space.
-  exists M (fun x y => d(x, y)); try exact/dst_sym; try exact/dst0_eq.
-  - by move => x y; apply/Rle_ge/dst_pos.
-  by move => x y z; apply/dst_trngl.
+  exists M (fun x y => d(x, y)); try exact dst_sym; try exact dst0_eq.
+  - by move => x y; apply Rle_ge, dst_pos.
+  by move => x y z; apply dst_trngl.
 Defined.
 
 Global Instance M_S2MS (M: Metric_Space): MetricSpace.
@@ -48,7 +48,7 @@ Section R_MetricSpace.
   Lemma limD xn yn x y:
     x \is_limit_of xn -> y \is_limit_of yn ->
     (x + y) \is_limit_of (ptw_op Rplus xn yn: nat -> Base R_met).
-  Proof. by rewrite -Uncv_lim => lim lim'; apply/CV_plus. Qed.
+  Proof. by rewrite <-Uncv_lim => lim lim'; apply/CV_plus. Qed.
 
   Lemma limB xn yn x y:
     xn ~> x -> yn ~> y -> (ptw_op Rminus xn yn) ~> (x - y).
@@ -95,7 +95,7 @@ Section R_MetricSpace.
   Proof.
     move => lim.
     rewrite scale_ptw.
-    exact/limM/lim/lim_cnst.
+    by apply/limM/lim; apply lim_cnst.
   Qed.
 
   Lemma cchy_crit: Cauchy_sequences === make_subset Cauchy_crit.
@@ -120,7 +120,7 @@ Section R_MetricSpace.
   Proof.
     split => lmt eps eg0; have [n prp]:= lmt eps eg0; exists n => m ineq.
     - rewrite {1}/d/= Rminus_0_l Rabs_Ropp Rabs_pos_eq; first exact/prp.
-      exact/pseudo_metrics.dst_pos.
+      by apply pseudo_metrics.dst_pos.
     suff: Rabs (0 - pd(x, xn m)) <= eps by split_Rabs; lra.
     exact/prp.
   Qed.
