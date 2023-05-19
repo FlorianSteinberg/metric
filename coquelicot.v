@@ -45,8 +45,9 @@ Defined.
 Coercion NM2MS: NormedModule >-> MetricSpace.
 
 Section PseudoMetricSpaces_and_UniformSpaces.
-  Definition PMS2US_mixin (M: PseudoMetricSpace): UniformSpace.mixin_of M.
+  Definition PMS2US_mixin (M: PseudoMetricSpace) (m : M): UniformSpace.mixin_of M.
     exists (fun x r y => pd(x, y) < r).
+    - apply m.
     - by move => x [eps eg0]; rewrite dstxx /=.
     - by move => x y e ineq; rewrite pseudo_metrics.dst_sym.
     move => x y z e e' ineq ineq'.
@@ -54,7 +55,7 @@ Section PseudoMetricSpaces_and_UniformSpaces.
     exact/Rplus_lt_compat.
   Defined.
 
-  Canonical PMS2US (M: PseudoMetricSpace):= UniformSpace.Pack M (PMS2US_mixin M) M.
+  Canonical PMS2US (M: PseudoMetricSpace) (m : M) := UniformSpace.Pack M (PMS2US_mixin m) M.
 
   Context (M: UniformSpace).
 
@@ -166,7 +167,7 @@ End PseudoMetricSpaces_and_UniformSpaces.
 Section Continuity.
   Local Open Scope pseudo_metric_scope.
   Lemma cntp_cntp_pmtrc (M N: PseudoMetricSpace) (f: M -> N) x:
-    f \continuous_in x <-> continuous (f: PMS2US M -> PMS2US N) x.
+    f \continuous_in x <-> continuous (f: PMS2US x -> PMS2US (f x)) x.
   Proof.
     split => [cont P [[eps eg0] prp]| cont eps eg0].
     - have [ | delta [dg0 aprx]]:= cont (eps/2); first by lra.

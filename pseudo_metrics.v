@@ -64,7 +64,7 @@ Section limits.
   Local Notation "x \limits xn \wrt d" := (limit d xn x) (at level 4).
   Local Notation "x \is_limit_of xn \wrt d" := (limit d xn x) (at level 4).
   
-  Global Instance lim_prpr M d: Proper (@eqfun M nat ==> @set_equiv M) (limit d).
+  Global Instance lim_prpr M' d': Proper (@eqfun M' nat ==> @set_equiv M') (limit d').
   Proof.
     move => xn yn eq x.
     split => lim eps eg0; have [N prp]:= lim eps eg0; exists N => m.

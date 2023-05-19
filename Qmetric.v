@@ -40,10 +40,10 @@ Section rationals_as_reals.
   
   Lemma Z_size_lt z: IZR z < 2 ^ (Z_size z).
   Proof.
-    rewrite pow_IZR; apply IZR_lt; rewrite -two_power_nat_equiv.
+    rewrite pow_IZR; apply IZR_lt;rewrite -Zpower.two_power_nat_equiv.
     elim: z => // p; elim: p => // p /= ih.
-    rewrite !Pos2Z.inj_xI two_power_nat_S.
-    have ineq: (Z.pos p + 1 <= two_power_nat (Pos_size p))%Z by lia.
+    rewrite !Pos2Z.inj_xI Zpower.two_power_nat_S.
+    have ineq: (Z.pos p + 1 <= Zpower.two_power_nat (Pos_size p))%Z by lia.
     by apply/ Z.lt_le_trans; last apply Zmult_le_compat_l; [ | apply ineq | ]; lia.
   Qed.
 
@@ -88,9 +88,9 @@ Section rationals_as_reals.
 
   Lemma Z_tech a b : (0 < b -> a / b * b > a  - b)%Z.
   Proof.
-    move=> Pb; rewrite {2}(Z_div_mod_eq a b); try lia.
+    move=> Pb; rewrite {2}(Zdiv.Z_div_mod_eq a b); try lia.
     suffices : (0 <= a mod b < b)%Z by lia.
-    by apply: Z_mod_lt; lia.
+    by apply: Zdiv.Z_mod_lt; lia.
   Qed.
 
   Definition Int_partQ eps := ((Qnum eps) / (Z.pos (Qden eps)))%Z.
@@ -107,7 +107,7 @@ Section rationals_as_reals.
       rewrite -(Rinv_r (Z.pos (Qden eps))); last exact: IZR_nz.
       rewrite -Rmult_assoc; apply/Rmult_le_compat_r.
       - by apply/Rlt_le/Rinv_0_lt_compat/IZR_lt; lia.
-      by rewrite Rmult_comm -mult_IZR; apply/IZR_le/Z_mult_div_ge; lia.
+      by rewrite Rmult_comm -mult_IZR; apply/IZR_le/Zdiv.Z_mult_div_ge; lia.
     rewrite /Q2R/Int_partQ.
     have ineq': ((Qnum eps / Z.pos (Qden eps)) * (Z.pos (Qden eps)) > Qnum eps - Z.pos (Qden eps))%Z.
     - by apply/(@Z_tech (Qnum eps) (Z.pos (Qden eps))); lia.
